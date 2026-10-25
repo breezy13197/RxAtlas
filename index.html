@@ -488,6 +488,7 @@
   .storage-warning{
     background:var(--clay-soft); color:var(--clay); border-radius:8px; padding:10px 14px; font-size:13px; margin-bottom:16px;
   }
+  .table-scroll{ overflow-x:auto; }
   .print-only{ display:none; }
 
   @media print{
@@ -513,9 +514,21 @@
     }
     #quiz-settings{ display:none; }
     #quiz-settings.open{ display:block; }
-    .mastery-row{ grid-template-columns:1fr auto; gap:6px 10px; }
+    /* minmax(0,…) lets the column shrink below its longest unbreakable word;
+       without it the bar and "Practice" link spill out of the card */
+    .mastery-row{ grid-template-columns:minmax(0,1fr) auto; gap:6px 10px; }
+    .mastery-row > *{ min-width:0; }
     .mastery-row .mastery-bar{ grid-column:1 / -1; order:3; }
+    .mastery-meta{ white-space:normal; flex-wrap:wrap; gap:2px 10px; }
+    .mastery-row .status-chip{ display:block; width:fit-content; max-width:100%; margin:3px 0 0; white-space:normal; }
     .dash-card{ padding:16px; }
+    .dash-table{ font-size:12px; }
+    .dash-table th, .dash-table td{ padding:5px 3px; }
+    .dash-table td{ white-space:normal !important; }
+    .dash-table th:nth-child(2), .dash-table td:nth-child(2){ display:none; } /* Type column; the group name already says it */
+    .dash-actions .btn{ flex:1 1 calc(50% - 10px); }
+    .dash-actions #progress-reset{ margin-left:0 !important; flex-basis:100%; }
+    .name-input{ width:100%; min-width:0; }
     .flash-card{ padding:16px; }
 
     #sidebar{ position:relative; height:auto; width:100%; min-width:0; }
@@ -2624,8 +2637,9 @@ document.querySelectorAll('#flash-deck-toggle .mode-btn').forEach(btn=>{
 
 // ---------- My Progress dashboard ----------
 function scoreOf(e){ return e.ok ? (e.gu ? 0.5 : 1) : 0; } // a lucky guess counts as half
-function masteryStatus(n, pct){
-  if(n < 5) return ['none', 'Not enough data'];
+// per-group rows count from 3 answers, question-type rows from 5
+function masteryStatus(n, pct, min=5){
+  if(n < min) return ['none', 'Not enough data'];
   if(pct >= 80) return ['strong', 'Strong'];
   if(pct >= 60) return ['mid', 'Getting there'];
   return ['weak', 'Needs work'];
@@ -2658,8 +2672,8 @@ function dayStreak(){
   while(days.has(dayKey(d.getTime()))){ streak++; d.setDate(d.getDate() - 1); }
   return streak;
 }
-function masteryRow(name, st, buttonHtml){
-  const [cls, word] = masteryStatus(st.n, st.pct);
+function masteryRow(name, st, buttonHtml, min=5){
+  const [cls, word] = masteryStatus(st.n, st.pct, min);
   return `<div class="mastery-row">
     <div>${escHtml(name)}<span class="status-chip ${cls}">${word}</span></div>
     <div class="mastery-bar" role="img" aria-label="${st.n ? st.pct + '% mastery' : 'not tried yet'}"><span style="width:${st.n ? st.pct : 0}%"></span></div>
@@ -2697,7 +2711,7 @@ function renderProgress(){
   html += `<div class="dash-card"><h2>Groups to work on</h2>
     <p class="hint">Heterocycles and functional groups where your mastery is below 80% (needs at least 3 answers about a group). Covers the Identify, Click the Group, Acid/Base, and Degree questions.</p>`;
   if(weak.length){
-    html += weak.map(w => masteryRow(w.label, w, `<button class="link-btn" data-focus="${escAttr(w.label)}">Practice</button>`)).join('');
+    html += weak.map(w => masteryRow(w.label, w, `<button class="link-btn" data-focus="${escAttr(w.label)}">Practice</button>`, 3)).join('');
     html += `<div class="dash-actions"><button class="btn" data-action="focus-weak">Practice all ${weak.length} of these</button>
       <button class="btn ghost" data-action="flash-weak">Flashcards for these</button></div>`;
   } else {
@@ -2748,9 +2762,9 @@ function renderProgress(){
   const all = groupStats().sort((a, b) => a.label.localeCompare(b.label));
   html += `<div class="dash-card"><h2>Every group you have practiced</h2>
     <details class="dash-details"><summary>Show table (${all.length} groups)</summary>
-    <table class="dash-table"><thead><tr><th>Group</th><th>Type</th><th class="num">Answered</th><th class="num">Mastery</th><th>Status</th></tr></thead><tbody>
-    ${all.map(g => `<tr><td>${escHtml(g.label)}</td><td>${escHtml(catIndex[g.label].category)}</td><td class="num">${g.n}</td><td class="num">${g.pct}%</td><td>${masteryStatus(g.n, g.pct)[1]}</td></tr>`).join('')}
-    </tbody></table></details></div>`;
+    <div class="table-scroll"><table class="dash-table"><thead><tr><th>Group</th><th>Type</th><th class="num">Answered</th><th class="num">Mastery</th><th>Status</th></tr></thead><tbody>
+    ${all.map(g => `<tr><td>${escHtml(g.label)}</td><td>${escHtml(catIndex[g.label].category)}</td><td class="num">${g.n}</td><td class="num">${g.pct}%</td><td style="white-space:nowrap">${g.n < 3 ? '—' : masteryStatus(g.n, g.pct, 3)[1]}</td></tr>`).join('')}
+    </tbody></table></div></details></div>`;
 
   box.innerHTML = html;
   wireDashboard(box);
