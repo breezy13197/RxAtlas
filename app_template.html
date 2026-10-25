@@ -1051,16 +1051,19 @@ function buildDocumentRelsXml(imageCount) {
 // ---- confusable groupings for quiz distractors ----
 const CONFUSE_GROUPS = [
   ["Pyridine","Pyrimidine","Pyrazine","Pyridazine"],
-  ["Piperidine","Piperazine","Morpholine","Pyrrolidine"],
+  ["Piperidine","Piperazine","Morpholine","Pyrrolidine","Azetidine"],
+  ["Tetrahydrofuran","Oxetane","Oxirane/Epoxide","Tetrahydrothiophene"],
   ["Pyrrole","Imidazole","Pyrazole","1,2,4-Triazole","1,2,3-Triazole","Tetrazole"],
   ["Oxazole","Isoxazole","Thiazole","Isothiazole","Furan","Thiophene"],
-  ["Indole","Benzimidazole","Benzothiazole","Benzoxazole","Benzofuran","Benzothiophene"],
-  ["Quinoline","Isoquinoline","Quinazoline","Purine (xanthine/guanine core)"],
+  ["1,2,4-Oxadiazole","1,3,4-Oxadiazole","1,2,4-Thiadiazole","1,3,4-Thiadiazole","1,2,5-Thiadiazole"],
+  ["Indole","Benzimidazole","Benzothiazole","Benzoxazole","Benzisoxazole","Benzofuran","Benzothiophene","Phthalane"],
+  ["Quinoline","Isoquinoline","Quinazoline","Quinoxaline","Purine (xanthine/guanine core)"],
+  ["beta-Lactam","Oxazolidinone","Benzodiazepine (7-membered N,N)","Hydantoin","Barbiturate (pyrimidinetrione)","Thiazolidinedione"],
   ["Carboxylic acid","Ester","Amide","Carbamate","Urea","Imide"],
-  ["Sulfonamide","Sulfonylurea","Sulfoxide","Sulfide","Thioester"],
-  ["Nitrile","Nitro group","Guanidine","Hydrazide/hydrazine"],
-  ["Ether","Phenol","Ketone","Aromatic halide"],
-  ["beta-Lactam","Hydantoin","Oxazolidinone","Benzodiazepine (7-membered N,N)"],
+  ["Sulfonamide","Sulfonylurea","Sulfone","Sulfonic acid","Sulfate ester","Sulfoxide","Sulfide","Thioester"],
+  ["Guanidine","Amidine","Hydrazide/hydrazine","Nitrile"],
+  ["Nitro group","N-oxide","Azide","Quaternary amine"],
+  ["Ether","Phenol","Ketone","Aromatic halide","Alkyl halide"],
 ];
 // Labels that match zero drugs are dropped: offering one as a wrong answer
 // teaches students they can always eliminate it.

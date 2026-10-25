@@ -82,3 +82,6 @@ Sulfate ester,Functional group,"[#6][OX2][SX4](=O)(=O)[OX2H,OX1-]",acidic,pKa ~ 
 Quaternary amine,Functional group,"[N+,n+;H0;!$(N=[N,O,S]);!$(NN);!$(*-[OX1-])]",basic,"Permanently charged, not pH-dependent — always ionized regardless of pH. Not metabolized by CYP N-dealkylation the way tertiary amines are."
 Azide,Functional group,[#6]-[N]=[N+]=[N-],neutral,Non-ionizable; the azide group itself is a weak base at the terminal N but not relevant at physiological pH.
 N-oxide,Functional group,"[N+,n+;!$(N=O);!$(n=O)]-[OX1-]",neutral,"Permanently charged like a quaternary amine, but reversible: N-oxides are commonly reduced back to the parent tertiary amine metabolically (e.g. by CYP or gut flora), unlike a true quaternary ammonium salt."
+Hydantoin,Heterocycle,O=C1NC(=O)CN1,acidic,pKa ~8–9 (weakly acidic)
+Barbiturate (pyrimidinetrione),Heterocycle,O=C1CC(=O)NC(=O)N1,acidic,pKa ~7.4–8 (weakly acidic)
+Thiazolidinedione,Heterocycle,O=C1NC(=O)SC1,acidic,pKa ~6–7 (weakly acidic)
