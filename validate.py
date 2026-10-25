@@ -1,20 +1,19 @@
 """
 Post-build validation for the Rx Substructure Atlas pipeline.
 
-Run this AFTER process.py + minify_svg.py and BEFORE copying data.json /
-svgs_min.json into the site's data/ directory. It catches the failure modes
-that are silent at runtime — a new group that never appears in a quiz, a
-renamed drug that orphans saved question banks, a pattern that matches nothing.
+Run this AFTER process.py + minify_svg.py and BEFORE build.py. It catches the
+failure modes that are silent at runtime — a new group that never appears in a
+quiz, a renamed drug that wipes out students' saved progress for it, a pattern
+that matches nothing.
 
 Usage:
-    python validate.py
-    python validate.py --site ../rx-atlas-site      # compare against deployed data
-    python validate.py --strict                     # warnings also exit non-zero
+    python3 validate.py
+    python3 validate.py --strict        # warnings also exit non-zero
 
 Exit codes:  0 = clean (or warnings only)   1 = errors found
 """
 
-import argparse, csv, json, os, re, sys
+import argparse, csv, json, os, re, subprocess, sys
 from collections import Counter
 
 # --- pretty output ---------------------------------------------------------
@@ -35,12 +34,12 @@ def read_csv(path):
         return list(csv.DictReader(f))
 
 
-def extract_confuse_groups(app_js_path):
-    """Parses CONFUSE_GROUPS out of app.js so the quiz's distractor table can be
-    checked against patterns.csv. Returns None if app.js can't be located."""
-    if not os.path.exists(app_js_path):
+def extract_confuse_groups(template_path):
+    """Parses CONFUSE_GROUPS out of app_template.html so the quiz's distractor
+    table can be checked against patterns.csv. Returns None if it can't be found."""
+    if not os.path.exists(template_path):
         return None
-    src = open(app_js_path, encoding="utf-8").read()
+    src = open(template_path, encoding="utf-8").read()
     try:
         block = src[src.index("const CONFUSE_GROUPS"):src.index("function confusablesFor")]
     except ValueError:
@@ -48,16 +47,18 @@ def extract_confuse_groups(app_js_path):
     return [re.findall(r'"([^"]+)"', line) for line in block.split("\n") if '["' in line]
 
 
-def confusables_for(label, groups):
+def confusables_for(label, groups, match_counts=None):
+    """Mirrors confusablesFor() in app_template.html, which skips labels that
+    match zero drugs."""
     for g in groups:
         if label in g:
-            return [x for x in g if x != label]
+            return [x for x in g if x != label and (match_counts is None or match_counts[x] > 0)]
     return []
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--site", default="..", help="path to the site repo (for data/ comparison)")
+    ap.add_argument("--template", default="app_template.html")
     ap.add_argument("--drugs", default="drugs.csv")
     ap.add_argument("--patterns", default="patterns.csv")
     ap.add_argument("--data", default="data.json")
@@ -133,20 +134,25 @@ def main():
                           "data.json and svgs_min.json are probably from different runs.")
                     break
 
-    # ---- 4. slug stability vs. what's deployed ----------------------------
-    deployed_path = os.path.join(args.site, "data", "data.json")
-    if os.path.exists(deployed_path) and os.path.abspath(deployed_path) != os.path.abspath(args.data):
-        old = {d["slug"] for d in json.load(open(deployed_path))["drugs"]}
-        lost = old - data_slugs
+    # ---- 4. drug stability vs. the last committed version -----------------
+    # Students' saved progress refers to drugs by slug, and their question banks
+    # by name. A drug that disappears takes that saved history with it.
+    try:
+        committed = subprocess.run(["git", "show", f"HEAD:{args.data}"], capture_output=True, text=True, check=True).stdout
+        old_drugs = json.loads(committed)["drugs"]
+    except Exception:
+        old_drugs = None
+    if old_drugs is not None:
+        lost = {d["slug"] for d in old_drugs} - data_slugs
         if lost:
-            error(f"{len(lost)} slug(s) present in the deployed build have disappeared: {sorted(lost)[:8]}",
-                  "Saved student question banks referencing these will be dropped on next load. "
-                  "If this is a rename, add an old->new alias in hydrateBankEntry() in app.js.")
-        added = data_slugs - old
+            warn(f"{len(lost)} drug(s) in the last committed version have disappeared: {sorted(lost)[:8]}",
+                 "Students' saved progress and question-bank entries for these drugs will be dropped "
+                 "the next time they open the page. Fine if intended; otherwise check for a renamed drug.")
+        added = data_slugs - {d["slug"] for d in old_drugs}
         if added:
-            note(f"{len(added)} new drug(s) since the deployed build")
+            note(f"{len(added)} new drug(s) since the last commit")
     else:
-        note("no deployed data/data.json found to compare against — skipping slug-stability check")
+        note("no committed data.json found to compare against — skipping drug-stability check")
 
     # ---- 5. quiz reachability (the silent one) ----------------------------
     match_counts = Counter()
@@ -160,10 +166,9 @@ def main():
                  "Its SMARTS may be wrong, or no drug in the set contains it. "
                  "It will not appear anywhere in the app.")
 
-    groups = extract_confuse_groups(os.path.join(args.site, "js", "app.js"))
+    groups = extract_confuse_groups(args.template)
     if groups is None:
-        note("could not read CONFUSE_GROUPS from app.js — skipping quiz-reachability check",
-             "Pass --site to point at the site repo.")
+        warn(f"could not read CONFUSE_GROUPS from {args.template} — skipping quiz-reachability check")
     else:
         # The six degree-of-substitution labels are deliberately excluded: they're
         # quizzed by the 'degree' question type instead of 'identify'.
@@ -174,17 +179,17 @@ def main():
         for label in labels:
             if label in DEGREE_LABELS or match_counts[label] == 0:
                 continue
-            n = len(confusables_for(label, groups))
+            n = len(confusables_for(label, groups, match_counts))
             if n < 3:
                 warn(f"{label!r} ({match_counts[label]} drugs) can never appear in an identify-type quiz",
                      f"It has {n} confusable(s) in CONFUSE_GROUPS; buildCandidatePool() requires 3. "
-                     f"Add it to a row in CONFUSE_GROUPS in app.js. (It is still reachable in "
+                     f"Add it to a row in CONFUSE_GROUPS in app_template.html. (It is still reachable in "
                      f"'Click the Group' mode, which needs no confusables.)")
 
         for stale in sorted(in_groups - set(labels)):
             warn(f"CONFUSE_GROUPS lists {stale!r}, which is not in patterns.csv",
-                 "It can be offered as a wrong answer but never be the correct one — "
-                 "an observant student can learn to eliminate it.")
+                 "The app skips it automatically, so it is never offered as an answer; "
+                 "remove it or fix the spelling.")
 
         for label in labels:
             if label in DEGREE_LABELS and match_counts[label] == 0:
@@ -218,7 +223,7 @@ def main():
         return 1
     if WARNINGS and args.strict:
         return 1
-    print("Safe to copy data.json and svgs_min.json into the site's data/ directory.")
+    print("Safe to run build.py.")
     return 0
 
 

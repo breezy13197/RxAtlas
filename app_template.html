@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="mobile-web-app-capable" content="yes">
-<title>Rx Substructure Atlas — Functional Group &amp; Heterocycle Finder</title>
+<title>Rx Substructure Atlas — Med Chem Practice</title>
 <style>
   :root{
     --ink:#132a2c;
@@ -380,9 +380,144 @@
   }
   .modal-foot{ padding:14px 22px; border-top:1px solid var(--paper-line); display:flex; gap:10px; justify-content:flex-end; }
 
+  /* ---------- Practice extras: banners, guess toggle, explanations ---------- */
+  .quiz-tools-row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  .practice-banner{
+    display:none; align-items:center; gap:10px; flex-wrap:wrap; background:var(--white);
+    border:1px solid var(--paper-line); border-left:4px solid var(--base);
+    padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:13px;
+  }
+  .practice-banner.show{ display:flex; }
+  .practice-banner .btn{ margin-left:auto; padding:6px 12px; font-size:12.5px; }
+  .pill-count{
+    display:inline-block; background:var(--clay); color:#fff; font-family:var(--mono); font-size:10.5px;
+    border-radius:9px; padding:1px 6px; margin-left:4px; vertical-align:1px;
+  }
+  .pill-count.zero{ background:var(--paper-line); color:var(--ink-soft); }
+  .retry-tag{
+    display:inline-block; font-size:11px; font-family:var(--sans); background:var(--base-soft); color:var(--base);
+    padding:2px 8px; border-radius:9px; margin-bottom:6px;
+  }
+  .stem-note{ display:block; font-size:12px; color:var(--ink-soft); margin-top:6px; line-height:1.45; }
+  .guess-btn{
+    font-family:var(--sans); font-size:12.5px; padding:8px 12px; border-radius:7px;
+    border:1px dashed var(--paper-line); background:transparent; color:var(--ink-soft); cursor:pointer;
+  }
+  .guess-btn:hover{ border-color:var(--amber); }
+  .guess-btn.on{ border-style:solid; border-color:var(--amber); background:#f6ead2; color:var(--amber-deep); font-weight:600; }
+  .guess-btn:disabled{ opacity:.4; cursor:default; }
+  .quiz-explain{
+    display:none; font-size:13px; color:var(--ink); line-height:1.55; margin-top:14px;
+    padding:12px 14px; background:var(--parchment); border-radius:8px;
+  }
+  .quiz-explain.show{ display:block; }
+  .quiz-explain p{ margin:0 0 6px; }
+  .quiz-explain p:last-child{ margin-bottom:0; }
+  .link-btn{
+    background:none; border:none; padding:0; font:inherit; color:var(--base); text-decoration:underline; cursor:pointer;
+  }
+  .kbd-hint{ font-size:11.5px; color:#8a8371; margin-top:12px; }
+  kbd{
+    font-family:var(--mono); font-size:10.5px; background:var(--parchment-deep); border:1px solid var(--paper-line);
+    border-radius:3px; padding:0 4px;
+  }
+  .quiz-settings-toggle{ display:none; }
+
+  /* ---------- Learn (flashcards) ---------- */
+  #learn-panel, #progress-panel{ max-width:820px; margin:0 auto; }
+  #learn-panel{ max-width:640px; }
+  .flash-card{ background:var(--white); border:1px solid var(--paper-line); border-radius:12px; padding:22px; }
+  .flash-prompt{ font-size:14px; margin-bottom:12px; line-height:1.5; }
+  .flash-prompt b{ font-family:var(--serif); font-weight:400; font-size:16px; }
+  .flash-card .struct-wrap{ border:1px solid var(--paper-line); border-radius:8px; margin-bottom:14px; }
+  .flash-back{ display:none; border-top:1px solid var(--paper-line); padding-top:14px; margin-top:4px; }
+  .flash-back.show{ display:block; }
+  .flash-name{ font-family:var(--serif); font-size:22px; margin-bottom:2px; }
+  .flash-cat{ font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--amber-deep); font-weight:600; }
+  .flash-examples{ font-size:13px; color:var(--ink-soft); margin-top:10px; line-height:1.5; }
+  .flash-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; }
+  .flash-meta{ font-size:12px; color:var(--ink-soft); margin-top:12px; font-family:var(--mono); }
+
+  /* ---------- My Progress dashboard ---------- */
+  .dash-tiles{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; margin-bottom:18px; }
+  .dash-tile{ background:var(--white); border:1px solid var(--paper-line); border-radius:10px; padding:14px 16px; }
+  .dash-tile .k{ font-size:11px; text-transform:uppercase; letter-spacing:.8px; color:var(--ink-soft); }
+  .dash-tile .v{ font-family:var(--serif); font-size:28px; color:var(--ink); margin-top:4px; line-height:1.1; }
+  .dash-tile .s{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .dash-card{ background:var(--white); border:1px solid var(--paper-line); border-radius:12px; padding:18px 20px; margin-bottom:18px; }
+  .dash-card h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0 0 4px; }
+  .dash-card .hint{ font-size:12.5px; color:var(--ink-soft); margin:0 0 12px; line-height:1.5; }
+  .dash-empty{ font-size:13px; color:var(--ink-soft); padding:6px 0; }
+  .mastery-row{
+    display:grid; grid-template-columns:minmax(150px,1.2fr) 2fr minmax(150px,auto); gap:12px; align-items:center;
+    padding:8px 0; border-bottom:1px solid var(--parchment-deep); font-size:13px;
+  }
+  .mastery-row:last-child{ border-bottom:none; }
+  .mastery-bar{ height:10px; background:var(--parchment-deep); border-radius:5px; overflow:hidden; }
+  .mastery-bar span{ display:block; height:100%; background:var(--base); border-radius:0 4px 4px 0; }
+  .mastery-meta{ font-family:var(--mono); font-size:11.5px; color:var(--ink-soft); white-space:nowrap; text-align:right; display:flex; gap:10px; justify-content:flex-end; align-items:center; }
+  .status-chip{ font-family:var(--sans); font-size:11px; padding:1px 8px; border-radius:9px; margin-left:6px; white-space:nowrap; }
+  .status-chip.strong{ background:var(--sage-soft); color:var(--sage); }
+  .status-chip.mid{ background:#f6ead2; color:var(--amber-deep); }
+  .status-chip.weak{ background:var(--clay-soft); color:var(--clay); }
+  .status-chip.none{ background:var(--parchment-deep); color:var(--ink-soft); }
+  .activity-chart{ display:flex; align-items:flex-end; gap:4px; height:120px; border-bottom:1px solid var(--paper-line); margin-top:28px; }
+  .activity-col{ flex:1; height:100%; display:flex; align-items:flex-end; justify-content:center; position:relative; outline:none; }
+  .activity-col .bar{ width:100%; max-width:30px; background:var(--base); border-radius:4px 4px 0 0; }
+  .activity-col:hover .bar, .activity-col:focus .bar{ background:var(--ink); }
+  .activity-col .tip{
+    display:none; position:absolute; bottom:calc(100% + 4px); left:50%; transform:translateX(-50%);
+    background:var(--ink); color:var(--white); font-size:11.5px; padding:5px 8px; border-radius:5px;
+    white-space:nowrap; z-index:2; pointer-events:none;
+  }
+  .activity-col:hover .tip, .activity-col:focus .tip{ display:block; }
+  .activity-labels{ display:flex; gap:4px; margin-top:4px; }
+  .activity-labels span{ flex:1; text-align:center; font-family:var(--mono); font-size:10px; color:var(--ink-soft); }
+  .dash-table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-top:8px; }
+  .dash-table th, .dash-table td{ text-align:left; padding:5px 6px; border-bottom:1px solid var(--parchment-deep); }
+  .dash-table td.num, .dash-table th.num{ text-align:right; font-family:var(--mono); }
+  details.dash-details summary{ cursor:pointer; font-size:12.5px; color:var(--base); margin-top:10px; }
+  .mistake-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--parchment-deep); font-size:13px; }
+  .mistake-row:last-child{ border-bottom:none; }
+  .mistake-row span{ color:var(--ink-soft); font-size:12px; }
+  .dash-actions{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  .name-input{
+    padding:8px 10px; border-radius:6px; border:1px solid var(--paper-line); font-family:var(--sans);
+    font-size:13px; background:var(--parchment); min-width:220px;
+  }
+  .storage-warning{
+    background:var(--clay-soft); color:var(--clay); border-radius:8px; padding:10px 14px; font-size:13px; margin-bottom:16px;
+  }
+  .print-only{ display:none; }
+
+  @media print{
+    #sidebar, .tabs, .search-row, .no-print{ display:none !important; }
+    #app{ display:block; }
+    body, #main{ background:#fff; }
+    #topbar .sub{ display:none; }
+    .print-only{ display:block; font-size:13px; margin-bottom:14px; }
+    .dash-card, .dash-tile{ break-inside:avoid; }
+    .mastery-bar, .mastery-bar span, .activity-col .bar, .status-chip{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+
   .sidebar-toggle-btn{ display:none; }
 
   @media (max-width: 820px){
+    .side-footer{ display:none; }
+    body:not([data-tab="browse"]) .sidebar-toggle-btn{ display:none; }
+    .tabs{ flex-wrap:wrap; }
+    .quiz-settings-toggle{
+      display:block; width:100%; text-align:left; margin-bottom:10px; padding:11px 14px;
+      background:var(--white); border:1px solid var(--paper-line); border-radius:8px;
+      font-family:var(--sans); font-size:14px; color:var(--ink); cursor:pointer;
+    }
+    #quiz-settings{ display:none; }
+    #quiz-settings.open{ display:block; }
+    .mastery-row{ grid-template-columns:1fr auto; gap:6px 10px; }
+    .mastery-row .mastery-bar{ grid-column:1 / -1; order:3; }
+    .dash-card{ padding:16px; }
+    .flash-card{ padding:16px; }
+
     #sidebar{ position:relative; height:auto; width:100%; min-width:0; }
     #app{ flex-direction:column; }
 
@@ -432,7 +567,7 @@
 <div id="app">
   <aside id="sidebar">
     <div class="brand">Rx Substructure <em>Atlas</em></div>
-    <div class="brand-sub">Med-chem question bank builder</div>
+    <div class="brand-sub">Med-chem practice &amp; question bank</div>
     <button id="sidebar-toggle" class="sidebar-toggle-btn">☰ Browse by group</button>
     <div id="sidebar-collapsible">
       <input id="cat-search" class="side-search" type="text" placeholder="Filter groups…">
@@ -448,13 +583,15 @@
   <main id="main">
     <div id="topbar">
       <div>
-        <h1>Find drugs by functional group or ring system</h1>
-        <div class="sub">Pick a group on the left, or search by name. Add hits to your <b>question bank</b> as you go, then export.</div>
+        <h1 id="page-title">Find drugs by functional group or ring system</h1>
+        <div class="sub" id="page-sub">Pick a group on the left, or search by name. Add hits to your <b>question bank</b> as you go, then export.</div>
       </div>
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="browse">Browse &amp; Build</button>
-        <button class="tab-btn" data-tab="quiz">Quiz Me</button>
-        <button class="tab-btn" data-tab="bank">Question Bank <span class="tab-count" id="tab-bank-count">0</span></button>
+      <div class="tabs" role="tablist">
+        <button class="tab-btn active" data-tab="browse" role="tab" aria-selected="true">Browse</button>
+        <button class="tab-btn" data-tab="learn" role="tab" aria-selected="false">Learn</button>
+        <button class="tab-btn" data-tab="quiz" role="tab" aria-selected="false">Quiz Me</button>
+        <button class="tab-btn" data-tab="progress" role="tab" aria-selected="false">My Progress</button>
+        <button class="tab-btn" data-tab="bank" role="tab" aria-selected="false">Question Bank <span class="tab-count" id="tab-bank-count">0</span></button>
       </div>
     </div>
 
@@ -479,7 +616,23 @@
         <div id="grid"></div>
       </div>
 
+      <div id="learn-panel" style="display:none;">
+        <div class="quiz-mode-row">
+          <span class="quiz-mode-label">Deck:</span>
+          <div class="quiz-mode-toggle" id="flash-deck-toggle">
+            <button class="mode-btn active" data-deck="all">All groups</button>
+            <button class="mode-btn" data-deck="Heterocycle">Heterocycles</button>
+            <button class="mode-btn" data-deck="Functional group">Functional groups</button>
+            <button class="mode-btn" data-deck="weak">My weak groups</button>
+          </div>
+        </div>
+        <div class="flash-card" id="flash-card"></div>
+        <div class="kbd-hint">Keyboard: <kbd>Space</kbd> flip card · <kbd>1</kbd> I knew it · <kbd>2</kbd> still learning</div>
+      </div>
+
       <div id="quiz-panel" style="display:none;">
+        <button class="quiz-settings-toggle" id="quiz-settings-toggle" aria-expanded="false" aria-controls="quiz-settings">⚙ Quiz settings: question types &amp; quiz sets ▾</button>
+        <div id="quiz-settings">
         <div class="quiz-mode-row">
           <span class="quiz-mode-label">Include (select any):</span>
           <div class="quiz-mode-toggle" id="quiz-mode-toggle">
@@ -505,31 +658,64 @@
           <div class="quiz-set-status" id="quiz-set-status"></div>
           <div class="quiz-set-list" id="quiz-set-list"></div>
         </div>
+        </div>
+
+        <div class="quiz-tools-row">
+          <button class="btn ghost" id="review-start">↻ Review my mistakes <span class="pill-count zero" id="review-count">0</span></button>
+        </div>
+        <div class="practice-banner" id="practice-banner">
+          <span id="practice-banner-text"></span>
+          <button class="btn ghost" id="practice-banner-clear">Back to regular practice</button>
+        </div>
 
         <div class="quiz-set-progress" id="quiz-set-progress" style="display:none;">
           <span id="quiz-set-progress-text"></span>
           <button class="quiz-set-exit-btn" id="quiz-set-exit">Exit quiz</button>
         </div>
 
-        <div class="quiz-card">
+        <div class="quiz-card" id="quiz-card">
           <div class="quiz-stem" id="quiz-stem"></div>
           <div class="quiz-struct" id="quiz-struct"></div>
           <div class="quiz-options" id="quiz-options"></div>
           <div class="quiz-footer">
-            <div class="quiz-feedback" id="quiz-feedback"></div>
-            <div style="display:flex; gap:8px;">
+            <div class="quiz-feedback" id="quiz-feedback" role="status" aria-live="polite"></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="guess-btn" id="quiz-guess" aria-pressed="false" title="Mark this answer as a guess. Lucky guesses count as half and come back for review.">🤔 I'm guessing</button>
               <button class="btn ghost" id="quiz-add-bank" disabled>Add to bank</button>
               <button class="btn" id="quiz-next">New question →</button>
             </div>
           </div>
+          <div class="quiz-explain" id="quiz-explain"></div>
+          <div class="kbd-hint">Keyboard: <kbd>1</kbd>–<kbd>4</kbd> answer · <kbd>G</kbd> mark as a guess · <kbd>Enter</kbd> next question</div>
         </div>
 
         <div class="quiz-card" id="quiz-summary-card" style="display:none;">
           <div class="quiz-summary-score" id="quiz-summary-score"></div>
           <div class="quiz-summary-breakdown" id="quiz-summary-breakdown"></div>
           <div class="quiz-footer" style="justify-content:flex-end;">
+            <span class="quiz-feedback" style="margin-right:auto;">These results are saved to My Progress.</span>
+            <button class="btn ghost" id="quiz-summary-progress">See my progress</button>
             <button class="btn" id="quiz-summary-done">Back to quiz setup</button>
           </div>
+        </div>
+      </div>
+
+      <div id="progress-panel" style="display:none;">
+        <div class="print-only" id="print-header"></div>
+        <div id="progress-content"></div>
+        <div class="dash-card no-print">
+          <h2>Save, back up, or hand in</h2>
+          <p class="hint">Your progress is stored only in this browser on this device. Clearing your browser history, using a private window, or switching computers starts you over, so download a backup now and then. Restore it on any device.</p>
+          <label class="hint" for="student-name" style="display:block; margin-bottom:4px;">Your name (printed on the report):</label>
+          <input id="student-name" class="name-input" type="text" autocomplete="name" placeholder="e.g. Jordan Lee">
+          <div class="dash-actions">
+            <button class="btn" id="progress-print">Print / save as PDF</button>
+            <button class="btn ghost" id="progress-download">Download backup</button>
+            <button class="btn ghost" id="progress-restore">Restore from backup…</button>
+            <input type="file" id="progress-restore-file" accept=".json,application/json" style="display:none;">
+            <button class="btn ghost" id="progress-reset" style="margin-left:auto; color:var(--clay);">Reset all progress</button>
+          </div>
+          <div class="hint" id="progress-backup-status" role="status" style="margin-top:10px;"></div>
         </div>
       </div>
 
@@ -557,10 +743,10 @@
 </div>
 
 <div class="modal-overlay" id="drug-modal">
-  <div class="modal drug-modal-box">
+  <div class="modal drug-modal-box" role="dialog" aria-modal="true" aria-labelledby="drug-modal-name">
     <div class="modal-head">
       <h2 id="drug-modal-name"></h2>
-      <button class="modal-close" id="drug-modal-close">×</button>
+      <button class="modal-close" id="drug-modal-close" aria-label="Close">×</button>
     </div>
     <div class="modal-body">
       <div class="drug-modal-layout">
@@ -584,6 +770,53 @@ const DATA = __DATA_JSON__;
 const SVGS = __SVGS_JSON__;
 const DRUGS = DATA.drugs;
 const [CW, CH] = DATA.canvas;
+const DRUG_BY_SLUG = Object.fromEntries(DRUGS.map(d=>[d.slug, d]));
+
+// ---------------------------------------------------------------------------
+// Saved progress. Everything is kept in this browser's localStorage only —
+// nothing is ever sent anywhere. Every read/write is wrapped so the app still
+// works (just without saving) in private windows or when storage is blocked.
+// ---------------------------------------------------------------------------
+const STORE_KEY = 'rxatlas.progress.v1';
+const BANK_KEY = 'rxatlas.bank.v1';
+const PREFS_KEY = 'rxatlas.prefs.v1';
+const MAX_LOG = 5000; // oldest answers are dropped past this, to stay well under storage limits
+function loadJSON(key, fallback){
+  try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+  catch(e){ return fallback; }
+}
+function saveJSON(key, value){
+  try{ localStorage.setItem(key, JSON.stringify(value)); return true; }
+  catch(e){ return false; }
+}
+const STORAGE_OK = (()=>{
+  try{ localStorage.setItem('rxatlas.test', '1'); localStorage.removeItem('rxatlas.test'); return true; }
+  catch(e){ return false; }
+})();
+function emptyProgress(){ return {v:1, log:[], mistakes:[], cards:{}}; }
+function normalizeProgress(p){
+  if(!p || typeof p !== 'object' || !Array.isArray(p.log)) return emptyProgress();
+  return {
+    v:1,
+    log: p.log.filter(e => e && typeof e.t === 'number' && typeof e.c === 'string'),
+    mistakes: Array.isArray(p.mistakes) ? p.mistakes.filter(m => m && m.k && m.kind && m.s) : [],
+    cards: (p.cards && typeof p.cards === 'object') ? p.cards : {},
+  };
+}
+let progress = normalizeProgress(loadJSON(STORE_KEY, null));
+let prefs = loadJSON(PREFS_KEY, {}) || {};
+function saveProgress(){
+  if(progress.log.length > MAX_LOG) progress.log = progress.log.slice(-MAX_LOG);
+  saveJSON(STORE_KEY, progress);
+  updateReviewCount();
+  updatePracticeBanner();
+}
+function savePrefs(){
+  prefs.tab = currentTab;
+  prefs.cats = [...selectedCategories];
+  prefs.deck = flashDeck;
+  saveJSON(PREFS_KEY, prefs);
+}
 
 // ---------------------------------------------------------------------------
 // Minimal dependency-free .docx (OOXML) writer, used by the quiz-set export.
@@ -829,9 +1062,26 @@ const CONFUSE_GROUPS = [
   ["Ether","Phenol","Ketone","Aromatic halide"],
   ["beta-Lactam","Hydantoin","Oxazolidinone","Benzodiazepine (7-membered N,N)"],
 ];
+// Labels that match zero drugs are dropped: offering one as a wrong answer
+// teaches students they can always eliminate it.
 function confusablesFor(label){
-  for(const g of CONFUSE_GROUPS){ if(g.includes(label)) return g.filter(x=>x!==label); }
+  for(const g of CONFUSE_GROUPS){ if(g.includes(label)) return g.filter(x=>x!==label && catIndex[x]); }
   return [];
+}
+function boxInside(inner, outer){
+  const t = 2;
+  return inner[0]>=outer[0]-t && inner[1]>=outer[1]-t && inner[2]<=outer[2]+t && inner[3]<=outer[3]+t;
+}
+// true when `other` sits inside (or around) the highlighted `label` region in this
+// drug, e.g. a sulfonylurea also contains a sulfonamide — offering it as a wrong
+// answer would make the question have two right answers.
+function overlapsHighlight(d, label, other){
+  const a = d.matches.find(x=>x.label===label), b = d.matches.find(x=>x.label===other);
+  if(!a || !b) return false;
+  return a.boxes.some(ba => b.boxes.some(bb => boxInside(ba,bb) || boxInside(bb,ba)));
+}
+function safeDistractorsFor(d, label){
+  return confusablesFor(label).filter(o => !overlapsHighlight(d, label, o));
 }
 const ALL_LABELS = [...new Set(DRUGS.flatMap(d=>d.matches.map(m=>m.label)))];
 
@@ -847,7 +1097,8 @@ const heteroLabels = Object.keys(catIndex).filter(l=>catIndex[l].category==="Het
 const fgLabels = Object.keys(catIndex).filter(l=>catIndex[l].category==="Functional group").sort((a,b)=>catIndex[b].count-catIndex[a].count);
 
 let activeFilter = null; // label string or null
-let bank = []; // list of {type:'browse'|'quiz', name, brand, cls, label, formula, mw, smiles, options?, correct?}
+// drop saved entries whose drug was removed or renamed in a later update
+let bank = (Array.isArray(loadJSON(BANK_KEY, [])) ? loadJSON(BANK_KEY, []) : []).filter(b => b && DRUGS.some(d=>d.name===b.name)); // list of {type:'browse'|'quiz', name, brand, cls, label, formula, mw, smiles, options?, correct?}
 
 // ---------- Sidebar rendering ----------
 function renderCatLists(filterText=""){
@@ -865,30 +1116,38 @@ function renderCatLists(filterText=""){
     let html = `<div class="group-heading"><span>${title}</span><span>${items.length}</span></div><ul class="cat-list">`;
     items.forEach(l=>{
       const active = activeFilter===l ? "active":"";
-      html += `<li class="cat-item ${active}" data-label="${escAttr(l)}"><span class="left">${dot(l)}<span>${l}</span></span><span class="cnt">${catIndex[l].count}</span></li>`;
+      html += `<li class="cat-item ${active}" data-label="${escAttr(l)}" tabindex="0" role="button" aria-pressed="${activeFilter===l}"><span class="left">${dot(l)}<span>${l}</span></span><span class="cnt">${catIndex[l].count}</span></li>`;
     });
     return html + "</ul>";
   }
   box.innerHTML = section("Heterocycles", heteroLabels) + section("Functional groups", fgLabels);
   box.querySelectorAll('.cat-item').forEach(el=>{
-    el.addEventListener('click', ()=>{
+    const choose = ()=>{
       const label = el.getAttribute('data-label');
-      activeFilter = (activeFilter===label) ? null : label;
-      renderCatLists(document.getElementById('cat-search').value);
-      renderGrid();
+      setFilter(activeFilter===label ? null : label);
       document.getElementById('sidebar-collapsible').classList.remove('open');
       if(window.innerWidth <= 820) window.scrollTo({top:0, behavior:'smooth'});
-    });
+    };
+    el.addEventListener('click', choose);
+    el.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); choose(); } });
   });
 }
 document.getElementById('cat-search').addEventListener('input', e=>renderCatLists(e.target.value));
-document.getElementById('clear-filter').addEventListener('click', ()=>{ activeFilter=null; renderCatLists(document.getElementById('cat-search').value); renderGrid(); });
-document.getElementById('banner-clear-filter').addEventListener('click', ()=>{ activeFilter=null; renderCatLists(document.getElementById('cat-search').value); renderGrid(); });
+// shows every drug containing `label` (or all drugs for null), switching to Browse if needed
+function setFilter(label){
+  activeFilter = label;
+  renderCatLists(document.getElementById('cat-search').value);
+  renderGrid();
+  if(currentTab !== 'browse') showTab('browse');
+}
+document.getElementById('clear-filter').addEventListener('click', ()=>setFilter(null));
+document.getElementById('banner-clear-filter').addEventListener('click', ()=>setFilter(null));
 document.getElementById('sidebar-toggle').addEventListener('click', ()=>{
   document.getElementById('sidebar-collapsible').classList.toggle('open');
 });
 
-function escAttr(s){ return s.replace(/"/g,'&quot;'); }
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function structLabel(d){ return escAttr('Chemical structure of ' + d.name); }
 function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ---------- Grid rendering ----------
@@ -918,7 +1177,7 @@ function structSvgWithBox(d, label){
       }).join("");
     }
   }
-  return `<div class="struct-wrap">${svg}${boxHtml}</div>`;
+  return `<div class="struct-wrap" role="img" aria-label="${structLabel(d)}">${svg}${boxHtml}</div>`;
 }
 
 function structSvgWithStereoDots(d, showDots){
@@ -931,7 +1190,7 @@ function structSvgWithStereoDots(d, showDots){
       return `<div class="stereo-dot" style="left:${left}%; top:${top}%;" title="${escAttr(pt.chirality==='?' ? 'stereocenter (unassigned)' : pt.chirality)}">${label}</div>`;
     }).join("");
   }
-  return `<div class="struct-wrap">${svg}${dotsHtml}</div>`;
+  return `<div class="struct-wrap" role="img" aria-label="${structLabel(d)}">${svg}${dotsHtml}</div>`;
 }
 
 function structSvgWithHBondDots(d, showDots, property){
@@ -946,7 +1205,7 @@ function structSvgWithHBondDots(d, showDots, property){
       return `<div class="${cls}" style="left:${left}%; top:${top}%;" title="${label}"></div>`;
     }).join("");
   }
-  return `<div class="struct-wrap">${svg}${dotsHtml}</div>`;
+  return `<div class="struct-wrap" role="img" aria-label="${structLabel(d)}">${svg}${dotsHtml}</div>`;
 }
 
 // letterData entries are always visible (they ARE the answer choices, not a
@@ -962,11 +1221,58 @@ function structSvgWithLetterDots(d, letterData, chosenLetter){
     }
     return `<div class="${cls}" style="left:${left}%; top:${top}%;" title="${escAttr(c.label)}">${c.letter}</div>`;
   }).join("");
-  return `<div class="struct-wrap">${svg}${dotsHtml}</div>`;
+  return `<div class="struct-wrap" role="img" aria-label="${structLabel(d)}">${svg}${dotsHtml}</div>`;
 }
 
 function isInBank(name,label){
   return bank.some(b=>b.name===name && b.label===label);
+}
+
+function cardHtml(d){
+  const label = activeFilter || (d.matches[0] && d.matches[0].label);
+  const shownMatch = d.matches.find(m=>m.label===label);
+  const tagsHtml = d.matches.slice(0,6).map(m=>{
+    const cls = m.category==="Functional group" ? "fg" : "";
+    const cur = (m.label===activeFilter) ? "current":"";
+    const abCls = m.acidBase==='acidic' ? 'ab-acidic' : m.acidBase==='basic' ? 'ab-basic' : '';
+    return `<span class="tag ${cls} ${cur} ${abCls}" data-label="${escAttr(m.label)}" title="${escAttr(m.acidBase)} — ${escAttr(m.pka)}">${m.label}</span>`;
+  }).join("");
+  const added = isInBank(d.name, label);
+  const abNote = shownMatch ? `<div class="ab-note ${shownMatch.acidBase}">${shownMatch.acidBase==='neutral'?'Neutral':shownMatch.acidBase.charAt(0).toUpperCase()+shownMatch.acidBase.slice(1)} — ${escHtml(shownMatch.pka)}</div>` : "";
+  return `<div class="card" tabindex="0" role="button" aria-label="${escAttr(d.name)}: open details" data-name="${escAttr(d.name)}" data-shown-label="${escAttr(label||'')}">
+    ${structSvgWithBox(d, label)}
+    <div class="body">
+      <div class="name">${escHtml(d.name)}</div>
+      <div class="brand">${escHtml(d.brand)}</div>
+      <div class="cls">${escHtml(d.class)}</div>
+      <div class="meta">${d.formula} · MW ${d.mw} · LogP ${d.logp} · HBD ${d.hbd} · HBA ${d.hba}</div>
+      ${abNote}
+      <div class="tags">${tagsHtml}</div>
+      <button class="add-btn ${added?'added':''}" data-name="${escAttr(d.name)}" data-label="${escAttr(label||'')}">${added?'✓ Added':'+ Add to bank'}</button>
+    </div>
+  </div>`;
+}
+
+// Cards are added in chunks as the student scrolls; drawing all ~400
+// structures at once made the page slow to open on phones and Chromebooks.
+const GRID_CHUNK = 40;
+let gridList = [], gridShown = 0;
+const gridObserver = new IntersectionObserver(entries=>{
+  if(entries.some(e=>e.isIntersecting)) appendGridChunk();
+}, {rootMargin:'800px'});
+
+function appendGridChunk(){
+  const grid = document.getElementById('grid');
+  gridObserver.disconnect();
+  const old = document.getElementById('grid-sentinel');
+  if(old) old.remove();
+  const next = gridList.slice(gridShown, gridShown + GRID_CHUNK);
+  grid.insertAdjacentHTML('beforeend', next.map(cardHtml).join(""));
+  gridShown += next.length;
+  if(gridShown < gridList.length){
+    grid.insertAdjacentHTML('beforeend', '<div id="grid-sentinel" style="grid-column:1/-1; height:1px;"></div>');
+    gridObserver.observe(document.getElementById('grid-sentinel'));
+  }
 }
 
 function renderGrid(){
@@ -980,68 +1286,58 @@ function renderGrid(){
   } else {
     banner.classList.remove('show');
   }
-  const list = matchingDrugs();
-  document.getElementById('result-count').textContent = list.length + (list.length===1 ? " drug" : " drugs");
+  gridList = matchingDrugs();
+  gridShown = 0;
+  document.getElementById('result-count').textContent = gridList.length + (gridList.length===1 ? " drug" : " drugs");
   const grid = document.getElementById('grid');
-  if(list.length===0){
+  gridObserver.disconnect();
+  if(gridList.length===0){
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="glyph">🔎</div>No drugs match. Try a different group or search term.</div>`;
     return;
   }
-  grid.innerHTML = list.map(d=>{
-    const label = activeFilter || (d.matches[0] && d.matches[0].label);
-    const shownMatch = d.matches.find(m=>m.label===label);
-    const tagsHtml = d.matches.slice(0,6).map(m=>{
-      const cls = m.category==="Functional group" ? "fg" : "";
-      const cur = (m.label===activeFilter) ? "current":"";
-      const abCls = m.acidBase==='acidic' ? 'ab-acidic' : m.acidBase==='basic' ? 'ab-basic' : '';
-      return `<span class="tag ${cls} ${cur} ${abCls}" data-label="${escAttr(m.label)}" title="${escAttr(m.acidBase)} — ${escAttr(m.pka)}">${m.label}</span>`;
-    }).join("");
-    const added = isInBank(d.name, label);
-    const abNote = shownMatch ? `<div class="ab-note ${shownMatch.acidBase}">${shownMatch.acidBase==='neutral'?'Neutral':shownMatch.acidBase.charAt(0).toUpperCase()+shownMatch.acidBase.slice(1)} — ${escHtml(shownMatch.pka)}</div>` : "";
-    return `<div class="card" data-name="${escAttr(d.name)}" data-shown-label="${escAttr(label||'')}">
-      ${structSvgWithBox(d, label)}
-      <div class="body">
-        <div class="name">${escHtml(d.name)}</div>
-        <div class="brand">${escHtml(d.brand)}</div>
-        <div class="cls">${escHtml(d.class)}</div>
-        <div class="meta">${d.formula} · MW ${d.mw} · LogP ${d.logp} · HBD ${d.hbd} · HBA ${d.hba}</div>
-        ${abNote}
-        <div class="tags">${tagsHtml}</div>
-        <button class="add-btn ${added?'added':''}" data-name="${escAttr(d.name)}" data-label="${escAttr(label||'')}">${added?'✓ Added':'+ Add to bank'}</button>
-      </div>
-    </div>`;
-  }).join("");
+  grid.innerHTML = "";
+  appendGridChunk();
+}
 
-  grid.querySelectorAll('.tag').forEach(el=>{
-    el.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      activeFilter = el.getAttribute('data-label');
-      renderCatLists(document.getElementById('cat-search').value);
-      renderGrid();
-      window.scrollTo({top:0, behavior:'smooth'});
-    });
-  });
-  grid.querySelectorAll('.add-btn').forEach(el=>{
-    el.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const name = el.getAttribute('data-name');
-      const label = el.getAttribute('data-label');
-      const d = DRUGS.find(x=>x.name===name);
-      if(isInBank(name,label)){
-        bank = bank.filter(b=>!(b.name===name && b.label===label));
-      } else {
-        bank.push({type:'browse', name:d.name, brand:d.brand, cls:d.class, label, formula:d.formula, mw:d.mw, smiles:d.smiles});
-      }
-      updateBankCount();
-      renderGrid();
-    });
-  });
-  grid.querySelectorAll('.card').forEach(el=>{
-    el.addEventListener('click', ()=>{
-      openDrugModal(el.getAttribute('data-name'), el.getAttribute('data-shown-label'));
-    });
+// updates "Add to bank" buttons in place, so saving a card doesn't re-render
+// (and scroll-jump) the whole grid
+function refreshAddButtons(){
+  document.querySelectorAll('#grid .add-btn').forEach(el=>{
+    const added = isInBank(el.dataset.name, el.dataset.label);
+    el.classList.toggle('added', added);
+    el.textContent = added ? '✓ Added' : '+ Add to bank';
   });
 }
+
+function toggleBankBrowse(name, label){
+  const d = DRUGS.find(x=>x.name===name);
+  if(isInBank(name,label)){
+    bank = bank.filter(b=>!(b.name===name && b.label===label));
+  } else {
+    bank.push({type:'browse', name:d.name, brand:d.brand, cls:d.class, label, formula:d.formula, mw:d.mw, smiles:d.smiles});
+  }
+  updateBankCount();
+}
+
+const gridEl = document.getElementById('grid');
+gridEl.addEventListener('click', (e)=>{
+  const tag = e.target.closest('.tag');
+  if(tag){
+    setFilter(tag.dataset.label);
+    window.scrollTo({top:0, behavior:'smooth'});
+    return;
+  }
+  const add = e.target.closest('.add-btn');
+  if(add){ toggleBankBrowse(add.dataset.name, add.dataset.label); return; }
+  const card = e.target.closest('.card');
+  if(card) openDrugModal(card.dataset.name, card.dataset.shownLabel);
+});
+gridEl.addEventListener('keydown', (e)=>{
+  if((e.key==='Enter' || e.key===' ') && e.target.classList.contains('card')){
+    e.preventDefault();
+    openDrugModal(e.target.dataset.name, e.target.dataset.shownLabel);
+  }
+});
 document.getElementById('drug-search').addEventListener('input', ()=>{
   document.getElementById('drug-search-clear').style.display = document.getElementById('drug-search').value ? '' : 'none';
   renderGrid();
@@ -1057,6 +1353,7 @@ document.getElementById('drug-search-clear').addEventListener('click', ()=>{
 // ---------- Drug detail modal (expanded card view) ----------
 let modalDrug = null;
 let modalActiveLabel = null;
+let modalReturnFocus = null;
 
 function openDrugModal(name, shownLabel){
   const d = DRUGS.find(x=>x.name===name);
@@ -1064,7 +1361,9 @@ function openDrugModal(name, shownLabel){
   modalDrug = d;
   modalActiveLabel = shownLabel || (d.matches[0] && d.matches[0].label) || null;
   renderDrugModal();
+  modalReturnFocus = document.activeElement;
   document.getElementById('drug-modal').classList.add('show');
+  document.getElementById('drug-modal-close').focus();
 }
 
 function renderDrugModal(){
@@ -1088,14 +1387,8 @@ function renderDrugModal(){
   addBtn.textContent = added ? '✓ Added to bank' : '+ Add to bank';
   addBtn.className = 'add-btn' + (added ? ' added' : '');
   addBtn.onclick = ()=>{
-    if(isInBank(d.name, label)){
-      bank = bank.filter(b=>!(b.name===d.name && b.label===label));
-    } else {
-      bank.push({type:'browse', name:d.name, brand:d.brand, cls:d.class, label, formula:d.formula, mw:d.mw, smiles:d.smiles});
-    }
-    updateBankCount();
+    toggleBankBrowse(d.name, label);
     renderDrugModal();
-    renderGrid();
   };
 
   const tagsBox = document.getElementById('drug-modal-tags');
@@ -1114,25 +1407,51 @@ function renderDrugModal(){
 }
 
 function closeDrugModal(){
-  document.getElementById('drug-modal').classList.remove('show');
+  const modal = document.getElementById('drug-modal');
+  if(!modal.classList.contains('show')) return;
+  modal.classList.remove('show');
+  if(modalReturnFocus && document.body.contains(modalReturnFocus)) modalReturnFocus.focus();
 }
 document.getElementById('drug-modal-close').addEventListener('click', closeDrugModal);
 document.getElementById('drug-modal').addEventListener('click', (e)=>{ if(e.target.id==='drug-modal') closeDrugModal(); });
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeDrugModal(); });
 
 // ---------- Tabs ----------
-document.querySelectorAll('.tab-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    const tab = btn.getAttribute('data-tab');
-    document.getElementById('browse-panel').style.display = tab==='browse' ? '' : 'none';
-    document.getElementById('browse-search-row').style.display = tab==='browse' ? '' : 'none';
-    document.getElementById('quiz-panel').style.display = tab==='quiz' ? '' : 'none';
-    document.getElementById('bank-panel').style.display = tab==='bank' ? '' : 'none';
-    if(tab==='quiz' && !currentQuiz) newQuizQuestion();
-    if(tab==='bank') renderBankPanel();
+const TABS = ['browse','learn','quiz','progress','bank'];
+const TAB_TEXT = {
+  browse: ['Find drugs by functional group or ring system',
+           'Pick a group on the left, or search by name. Click any drug for details, or add it to your <b>question bank</b>.'],
+  learn: ['Flashcards: learn the groups',
+          'Name the highlighted group, flip the card, then be honest: cards you are still learning come back more often.'],
+  quiz: ['Practice questions',
+         'Questions on real drug structures. Every answer is saved to <b>My Progress</b> in this browser.'],
+  progress: ['My progress',
+             'Your results are saved only in this browser on this device. Nothing is sent to your instructor.'],
+  bank: ['Your question bank',
+         'Questions you have saved. Download them as a Word document to study offline or share.'],
+};
+let currentTab = 'browse';
+function showTab(tab){
+  if(!TABS.includes(tab)) tab = 'browse';
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    const on = b.getAttribute('data-tab') === tab;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on);
   });
+  TABS.forEach(t=>{ document.getElementById(t+'-panel').style.display = t===tab ? '' : 'none'; });
+  document.getElementById('browse-search-row').style.display = tab==='browse' ? '' : 'none';
+  document.getElementById('page-title').textContent = TAB_TEXT[tab][0];
+  document.getElementById('page-sub').innerHTML = TAB_TEXT[tab][1];
+  document.body.dataset.tab = tab;
+  if(tab==='quiz' && !currentQuiz && !takingQuizSet) newQuizQuestion();
+  if(tab==='learn' && !currentCard) newFlashcard();
+  if(tab==='progress') renderProgress();
+  if(tab==='bank') renderBankPanel();
+  savePrefs();
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>showTab(btn.getAttribute('data-tab')));
 });
 
 // ---------- Quiz ----------
@@ -1142,6 +1461,9 @@ let quizSet = []; // batch-generated questions, populated by generateQuizSet()
 let takingQuizSet = false;
 let quizSetIndex = 0;
 let quizSetResults = []; // {category, correct} per answered question, only while takingQuizSet
+let reviewMode = false;     // serving only questions the student previously missed
+let focusLabels = new Set(); // when non-empty, practice only questions about these groups
+let quizGuess = false;      // student marked the current answer as a guess
 
 // maps a question's type to the human-readable category used in the results breakdown
 function categoryForQuestion(q){
@@ -1166,6 +1488,9 @@ document.getElementById('quiz-mode-toggle').querySelectorAll('.mode-btn').forEac
       selectedCategories.add(cat);
       btn.classList.add('active');
     }
+    reviewMode = false;
+    updatePracticeBanner();
+    savePrefs();
     newQuizQuestion();
   });
 });
@@ -1181,9 +1506,11 @@ function numericDistractors(correct, count){
   return shuffle([...pool]).slice(0, count);
 }
 
-function showEmptyQuiz(msg){
+function showEmptyQuiz(msg, title){
   currentQuiz = null;
-  document.getElementById('quiz-stem').innerHTML = `<b>No eligible questions</b>`;
+  document.getElementById('quiz-stem').innerHTML = `<b>${title || 'No eligible questions'}</b>`;
+  document.getElementById('quiz-explain').classList.remove('show');
+  document.getElementById('quiz-guess').disabled = true;
   document.getElementById('quiz-struct').innerHTML = `<div class="empty-state">${msg}</div>`;
   document.getElementById('quiz-options').innerHTML = "";
   document.getElementById('quiz-feedback').textContent = "";
@@ -1240,18 +1567,26 @@ function buildCandidatePool(kind){
   }
   // kind is 'Heterocycle' or 'Functional group' — the two "identify the group" categories
   return DRUGS.flatMap(d => d.matches
-    .filter(m => m.category === kind && confusablesFor(m.label).length >= 3)
+    .filter(m => m.category === kind && safeDistractorsFor(d, m.label).length >= 3)
     .map(m => ({kind:'identify', d, m})));
 }
 function buildCandidatePoolForCurrentMode(){
   let pool = [];
   selectedCategories.forEach(cat => { pool = pool.concat(buildCandidatePool(cat)); });
+  if(focusLabels.size) pool = pool.filter(r => r.m && focusLabels.has(r.m.label));
   return pool;
 }
 
+// every question remembers the recipe it came from, so answers can be logged
+// to My Progress and missed questions can be rebuilt later for review
 function questionFromRecipe(recipe){
+  const q = buildQuestion(recipe);
+  q.recipe = recipe;
+  return q;
+}
+function buildQuestion(recipe){
   if(recipe.kind === 'identify'){
-    const distractors = shuffle(confusablesFor(recipe.m.label)).slice(0,3);
+    const distractors = shuffle(safeDistractorsFor(recipe.d, recipe.m.label)).slice(0,3);
     const options = shuffle([recipe.m.label, ...distractors]);
     return {type:'identify', drug:recipe.d, correct:recipe.m.label, options, highlightLabel:recipe.m.label};
   }
@@ -1297,8 +1632,35 @@ function questionFromRecipe(recipe){
 }
 
 function newQuizQuestion(){
+  if(reviewMode){
+    const items = progress.mistakes.map(recipeFromMistake).filter(Boolean);
+    if(items.length === 0){
+      reviewMode = false;
+      updatePracticeBanner();
+      return showEmptyQuiz('Questions you miss (or guess on) will show up here so you can try them again. Press “New question →” to keep practicing.', '🎉 Nothing left to review. Nice work!');
+    }
+    // avoid showing the same question twice in a row when there's a choice
+    const lastKey = currentQuiz && currentQuiz.recipe ? mistakeKey(currentQuiz.recipe) : null;
+    const choices = items.filter(r => mistakeKey(r) !== lastKey);
+    const pick = (choices.length ? choices : items)[0];
+    currentQuiz = questionFromRecipe(pick);
+    currentQuiz.isRetry = true;
+    return renderQuiz();
+  }
   const pool = buildCandidatePoolForCurrentMode();
   if(pool.length === 0) return showEmptyQuiz('No eligible questions for this selection — try including another category.');
+  // spaced review: now and then, bring back a question missed at least 5 questions ago
+  if(!focusLabels.size){
+    const due = progress.mistakes
+      .filter(mk => progress.log.length - mk.at >= 5)
+      .map(recipeFromMistake)
+      .filter(r => r && selectedCategories.has(quizCatFor(r)));
+    if(due.length && Math.random() < 0.3){
+      currentQuiz = questionFromRecipe(due[Math.floor(Math.random()*due.length)]);
+      currentQuiz.isRetry = true;
+      return renderQuiz();
+    }
+  }
   currentQuiz = questionFromRecipe(pool[Math.floor(Math.random()*pool.length)]);
   renderQuiz();
 }
@@ -1323,6 +1685,8 @@ function attachLocateClickHandler(){
     if(takingQuizSet){
       quizSetResults.push({category: categoryForQuestion(currentQuiz), correct: isRight});
     }
+    currentQuiz.answered = true;
+    recordAnswer(currentQuiz, isRight);
 
     const boxHtml = currentQuiz.boxes.map(box=>{
       const [x0,y0,x1,y1] = box;
@@ -1333,11 +1697,12 @@ function attachLocateClickHandler(){
     const markerLeft = (clickX/CW*100).toFixed(2), markerTop = (clickY/CH*100).toFixed(2);
     const markerCls = isRight ? 'click-marker correct-reveal' : 'click-marker wrong-reveal';
     const markerHtml = `<div class="${markerCls}" style="left:${markerLeft}%; top:${markerTop}%;"></div>`;
-    document.getElementById('quiz-struct').innerHTML = `<div class="struct-wrap">${SVGS[currentQuiz.drug.slug]}${boxHtml}${markerHtml}</div>`;
+    document.getElementById('quiz-struct').innerHTML = `<div class="struct-wrap" role="img" aria-label="${structLabel(currentQuiz.drug)}">${SVGS[currentQuiz.drug.slug]}${boxHtml}${markerHtml}</div>`;
 
     document.getElementById('quiz-feedback').textContent = isRight
       ? `Correct — your click landed inside the ${currentQuiz.correct} region.`
       : `Not quite — the ${currentQuiz.correct} is boxed above; your click is marked in red.`;
+    showExplanation(currentQuiz, null, isRight);
     document.getElementById('quiz-options').innerHTML = '';
     document.getElementById('quiz-add-bank').disabled = false;
   };
@@ -1350,15 +1715,19 @@ function renderQuiz(){
     ? (quizSetIndex + 1 >= quizSet.length ? 'Finish quiz →' : 'Next question →')
     : 'New question →';
   const stem = document.getElementById('quiz-stem');
+  quizGuess = false;
+  syncGuessBtn();
+  document.getElementById('quiz-guess').disabled = false;
+  document.getElementById('quiz-explain').classList.remove('show');
   if(type==='identify'){
     stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>Identify the highlighted group.</b>`;
   } else if(type==='acidbase'){
     stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>Is the highlighted group acidic, basic, or neutral (non-ionizable)?</b>`;
   } else if(type==='hbond'){
     const propName = currentQuiz.property==='hbd' ? 'hydrogen bond donors' : 'hydrogen bond acceptors';
-    stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>How many ${propName} does this molecule have?</b>`;
+    stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>How many ${propName} does this molecule have?</b><span class="stem-note">${HBOND_DEFS[currentQuiz.property]}</span>`;
   } else if(type==='stereo'){
-    stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>How many stereocenters does this molecule have?</b>`;
+    stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>How many stereocenters does this molecule have?</b><span class="stem-note">${STEREO_DEF}</span>`;
   } else if(type==='ro5'){
     stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>Does this molecule violate Lipinski's Rule of Five? If so, which criterion?</b>`;
   } else if(type==='degree'){
@@ -1368,6 +1737,7 @@ function renderQuiz(){
   } else if(type==='locate'){
     stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>Click on the ${escHtml(correct)} in this structure.</b>`;
   }
+  if(currentQuiz.isRetry) stem.innerHTML = `<span class="retry-tag">↻ A question you missed earlier</span><br>` + stem.innerHTML;
   document.getElementById('quiz-struct').innerHTML = type==='stereo'
     ? structSvgWithStereoDots(drug, false)
     : type==='basicn'
@@ -1403,6 +1773,8 @@ function renderQuiz(){
       if(takingQuizSet){
         quizSetResults.push({category: categoryForQuestion(currentQuiz), correct: isRight});
       }
+      currentQuiz.answered = true;
+      recordAnswer(currentQuiz, isRight);
       let feedback = "";
       if(type==='identify'){
         feedback = isRight
@@ -1439,6 +1811,7 @@ function renderQuiz(){
           : `Not quite — Nitrogen ${correct} is most basic: ${correctInfo.label}`;
       }
       document.getElementById('quiz-feedback').textContent = feedback;
+      showExplanation(currentQuiz, chosen, isRight);
       document.getElementById('quiz-add-bank').disabled = false;
     });
   });
@@ -1451,6 +1824,10 @@ document.getElementById('quiz-next').addEventListener('click', () => {
   }
 });
 document.getElementById('quiz-set-take').addEventListener('click', startQuizSetTaking);
+document.getElementById('quiz-summary-progress').addEventListener('click', ()=>{
+  document.getElementById('quiz-summary-done').click();
+  showTab('progress');
+});
 document.getElementById('quiz-set-exit').addEventListener('click', exitQuizSetTaking);
 document.getElementById('quiz-summary-done').addEventListener('click', () => {
   document.getElementById('quiz-summary-card').style.display = 'none';
@@ -1603,6 +1980,7 @@ function setTakingModeUI(active){
   document.getElementById('quiz-set-export').disabled = active || quizSet.length === 0;
   document.getElementById('quiz-set-take').disabled = active || quizSet.length === 0;
   document.querySelectorAll('#quiz-mode-toggle .mode-btn').forEach(b => b.disabled = active);
+  document.getElementById('review-start').disabled = active;
   document.getElementById('quiz-set-progress').style.display = active ? 'flex' : 'none';
 }
 
@@ -1757,6 +2135,8 @@ function updateBankCount(){
   const tabCount = document.getElementById('tab-bank-count');
   tabCount.textContent = bank.length;
   tabCount.classList.toggle('zero', bank.length === 0);
+  saveJSON(BANK_KEY, bank);
+  refreshAddButtons();
 }
 function renderBankPanel(){
   const rows = document.getElementById('bank-rows');
@@ -1782,7 +2162,7 @@ function renderBankPanel(){
     }).join("");
     rows.querySelectorAll('.rm').forEach(el=>el.addEventListener('click',()=>{
       bank.splice(parseInt(el.getAttribute('data-i')),1);
-      updateBankCount(); renderBankPanel(); renderGrid();
+      updateBankCount(); renderBankPanel();
     }));
   }
   document.getElementById('export-box').value = buildExportText();
@@ -1790,10 +2170,10 @@ function renderBankPanel(){
 
 // robust distractor picker: prefers the curated confusables list, but pads
 // from the full label pool if a bookmarked label has fewer than `count` peers
-function distractorsFor(label, count){
-  let pool = confusablesFor(label);
+function distractorsFor(label, count, drug){
+  let pool = drug ? safeDistractorsFor(drug, label) : confusablesFor(label);
   if(pool.length < count){
-    const extra = shuffle(ALL_LABELS.filter(l => l !== label && !pool.includes(l)));
+    const extra = shuffle(ALL_LABELS.filter(l => l !== label && !pool.includes(l) && !(drug && overlapsHighlight(drug, label, l))));
     pool = [...pool, ...extra];
   }
   return shuffle(pool).slice(0, count);
@@ -1806,7 +2186,7 @@ function bankEntryToQuizData(b){
   if(b.type === 'browse' || b.type === 'quiz'){
     let options = b.options;
     if(!options){
-      const distractors = distractorsFor(b.label, 3);
+      const distractors = distractorsFor(b.label, 3, drug);
       options = shuffle([b.label, ...distractors]);
     }
     const stem = `${b.name} is used as ${b.cls.split(" (")[0].toLowerCase()}. Identify the highlighted ${categoryWordFor(b.label)}.`;
@@ -1931,7 +2311,11 @@ async function exportBankToDocx(){
 document.getElementById('bank-btn').addEventListener('click', ()=>{
   document.querySelector('.tab-btn[data-tab="bank"]').click();
 });
-document.getElementById('clear-bank').addEventListener('click', ()=>{ bank=[]; updateBankCount(); renderBankPanel(); renderGrid(); });
+document.getElementById('clear-bank').addEventListener('click', ()=>{
+  if(bank.length === 0) return;
+  if(!confirm(`Remove all ${bank.length} saved question(s) from your bank? This can't be undone.`)) return;
+  bank = []; updateBankCount(); renderBankPanel();
+});
 document.getElementById('copy-export').addEventListener('click', ()=>{
   const box = document.getElementById('export-box');
   box.select();
@@ -1939,11 +2323,555 @@ document.getElementById('copy-export').addEventListener('click', ()=>{
 });
 document.getElementById('download-export').addEventListener('click', exportBankToDocx);
 
+// ---------- Recording answers & reviewing mistakes ----------
+// the quiz-type key used by the "Include" toggles; identify questions split by group category
+function quizCatFor(recipe){ return recipe.kind === 'identify' ? recipe.m.category : recipe.kind; }
+const QUIZ_CAT_NAMES = {
+  'Heterocycle':'Identify heterocycles', 'Functional group':'Identify functional groups',
+  acidbase:'Acid / Base', hbond:'H-Bond Count', stereo:'Stereocenters', ro5:'Rule of 5',
+  degree:'Degree of Substitution', basicn:'Most Basic Nitrogen', locate:'Click the Group',
+};
+function mistakeKey(r){ return [r.kind, r.d.slug, r.m ? r.m.label : (r.property || '')].join('|'); }
+
+function recordAnswer(q, isRight){
+  const r = q.recipe;
+  if(!r) return;
+  const entry = {t:Date.now(), c:quizCatFor(r), g:r.m ? r.m.label : null, s:r.d.slug, ok:isRight, gu:quizGuess};
+  progress.log.push(entry);
+  q.logEntry = entry;
+  updateMistakes(r, isRight && !quizGuess);
+  saveProgress();
+}
+
+// a miss (or a lucky guess) puts the question on the review list; answering it
+// correctly without guessing takes it off again
+function updateMistakes(r, mastered){
+  const key = mistakeKey(r);
+  const i = progress.mistakes.findIndex(x => x.k === key);
+  if(mastered){
+    if(i >= 0) progress.mistakes.splice(i, 1);
+    return;
+  }
+  const rec = {k:key, kind:r.kind, s:r.d.slug, g:r.m ? r.m.label : null, p:r.property || null, at:progress.log.length};
+  if(i >= 0) progress.mistakes[i] = rec; else progress.mistakes.push(rec);
+}
+
+function recipeFromMistake(mk){
+  const d = DRUG_BY_SLUG[mk.s];
+  if(!d) return null; // drug removed in a later update
+  if(['identify','acidbase','degree','locate'].includes(mk.kind)){
+    const m = d.matches.find(x => x.label === mk.g);
+    if(!m) return null;
+    if(mk.kind === 'identify' && safeDistractorsFor(d, m.label).length < 3) return null;
+    return {kind:mk.kind, d, m};
+  }
+  if(mk.kind === 'hbond') return {kind:'hbond', d, property:mk.p};
+  if(mk.kind === 'basicn' && !d.basicNOptions) return null;
+  return {kind:mk.kind, d};
+}
+
+function updateReviewCount(){
+  const el = document.getElementById('review-count');
+  el.textContent = progress.mistakes.length;
+  el.classList.toggle('zero', progress.mistakes.length === 0);
+}
+
+function updatePracticeBanner(){
+  const el = document.getElementById('practice-banner');
+  const txt = document.getElementById('practice-banner-text');
+  if(reviewMode){
+    txt.innerHTML = `<b>Reviewing your mistakes</b>: ${progress.mistakes.length} left. Answer one correctly (without marking it a guess) to clear it.`;
+    el.classList.add('show');
+  } else if(focusLabels.size){
+    txt.innerHTML = `<b>Focused practice:</b> ${[...focusLabels].map(escHtml).join(', ')}`;
+    el.classList.add('show');
+  } else {
+    el.classList.remove('show');
+  }
+}
+
+function syncCategoryButtons(){
+  document.querySelectorAll('#quiz-mode-toggle .mode-btn').forEach(b=>{
+    b.classList.toggle('active', selectedCategories.has(b.getAttribute('data-cat')));
+  });
+}
+
+// launch practice from the dashboard: on specific groups, or on one question type
+function startFocusPractice(labels){
+  if(takingQuizSet) exitQuizSetTaking();
+  reviewMode = false;
+  focusLabels = new Set(labels);
+  selectedCategories = new Set(['Heterocycle','Functional group','acidbase','degree','locate']);
+  syncCategoryButtons();
+  updatePracticeBanner();
+  newQuizQuestion();
+  showTab('quiz');
+}
+function startTypePractice(cat){
+  if(takingQuizSet) exitQuizSetTaking();
+  reviewMode = false;
+  focusLabels = new Set();
+  selectedCategories = new Set([cat]);
+  syncCategoryButtons();
+  updatePracticeBanner();
+  newQuizQuestion();
+  showTab('quiz');
+}
+function startReview(){
+  if(takingQuizSet) exitQuizSetTaking();
+  reviewMode = true;
+  focusLabels = new Set();
+  updatePracticeBanner();
+  newQuizQuestion();
+  showTab('quiz');
+}
+document.getElementById('review-start').addEventListener('click', startReview);
+document.getElementById('practice-banner-clear').addEventListener('click', ()=>{
+  reviewMode = false;
+  focusLabels = new Set();
+  updatePracticeBanner();
+  newQuizQuestion();
+});
+document.getElementById('quiz-settings-toggle').addEventListener('click', ()=>{
+  const open = document.getElementById('quiz-settings').classList.toggle('open');
+  document.getElementById('quiz-settings-toggle').setAttribute('aria-expanded', open);
+});
+
+function syncGuessBtn(){
+  const b = document.getElementById('quiz-guess');
+  b.classList.toggle('on', quizGuess);
+  b.setAttribute('aria-pressed', quizGuess);
+  b.textContent = quizGuess ? '🤔 Marked as a guess' : "🤔 I'm guessing";
+}
+// can be pressed before or after answering; a correct guess counts as half
+document.getElementById('quiz-guess').addEventListener('click', ()=>{
+  if(!currentQuiz) return;
+  quizGuess = !quizGuess;
+  syncGuessBtn();
+  const entry = currentQuiz.logEntry;
+  if(entry){
+    entry.gu = quizGuess;
+    updateMistakes(currentQuiz.recipe, entry.ok && !quizGuess);
+    saveProgress();
+  }
+});
+
+// ---------- Explanations shown after each answer ----------
+// These match how process.py counts (RDKit's Lipinski donor/acceptor patterns),
+// so students can see why a number may differ from their notes.
+const HBOND_DEFS = {
+  hbd: 'Counted here: each N, O, or S atom that carries at least one H (an –NH₂ counts once, not twice).',
+  hba: 'Counted here: O and S atoms (except the OH of acids like –COOH), nitrogens not attached to a C=O or similar group (so amide N’s are not counted), aromatic N without an H, and F. Some courses use the simpler “count every N and O” rule, which can differ by 1–2.',
+};
+const STEREO_DEF = 'Counted here: tetrahedral stereocenters (usually a carbon with four different groups attached), including ones whose R/S configuration is not specified. E/Z double bonds are not counted.';
+const ACIDBASE_TIPS = {
+  acidic: 'Acidic groups can give up a proton (H⁺) and become negatively charged.',
+  basic: 'Basic groups can pick up a proton (H⁺) and become positively charged.',
+  neutral: 'Neutral groups do not gain or lose a proton under normal body conditions.',
+};
+
+function seeAllLink(label){
+  if(!catIndex[label]) return '';
+  return `<button class="link-btn" data-goto="${escAttr(label)}">See all ${catIndex[label].count} drugs with ${escHtml(label)}</button>`;
+}
+function groupFacts(label){
+  const info = catIndex[label];
+  if(!info) return '';
+  return `<b>${escHtml(label)}</b> (${info.category.toLowerCase()}): ${abDisplayLabel(info.acidBase).toLowerCase()}, ${escHtml(info.pka)}.`;
+}
+
+function showExplanation(q, chosen, isRight){
+  const box = document.getElementById('quiz-explain');
+  const parts = [];
+  if(q.type === 'identify'){
+    parts.push(groupFacts(q.correct));
+    if(!isRight && chosen && catIndex[chosen]){
+      parts.push(`You chose <b>${escHtml(chosen)}</b>, which is a different group. Compare the two: ${seeAllLink(q.correct)} · ${seeAllLink(chosen)}`);
+    } else {
+      parts.push(seeAllLink(q.correct));
+    }
+  } else if(q.type === 'acidbase'){
+    parts.push(ACIDBASE_TIPS[q.correct]);
+    parts.push(groupFacts(q.groupLabel) + ' ' + seeAllLink(q.groupLabel));
+  } else if(q.type === 'hbond'){
+    parts.push(HBOND_DEFS[q.property]);
+  } else if(q.type === 'stereo'){
+    parts.push(STEREO_DEF);
+  } else if(q.type === 'ro5'){
+    const d = q.drug;
+    const rows = [
+      ['Molecular weight', d.mw, 500], ['LogP', d.logp, 5], ['H-bond donors', d.hbd, 5], ['H-bond acceptors', d.hba, 10],
+    ].map(([name, val, limit]) => `${name}: ${val} (limit ${limit}) ${val > limit ? '✗ <b>violates</b>' : '✓'}`);
+    parts.push('Lipinski’s Rule of Five predicts poor oral absorption when a drug breaks more than one of these limits:<br>' + rows.join('<br>'));
+  } else if(q.type === 'degree'){
+    parts.push(q.groupType === 'amine'
+      ? 'For amines, count the carbons attached directly to the nitrogen: 1 = primary, 2 = secondary, 3 = tertiary.'
+      : 'For alcohols, find the carbon holding the OH and count the other carbons attached to it: 1 = primary, 2 = secondary, 3 = tertiary.');
+  } else if(q.type === 'basicn'){
+    parts.push('How each marked nitrogen compares:<br>' + q.letterData.map(c =>
+      `${c.correct ? '<b>' : ''}Nitrogen ${c.letter}: ${escHtml(c.label)}${c.correct ? '</b>' : ''}`).join('<br>'));
+  } else if(q.type === 'locate'){
+    parts.push(groupFacts(q.correct) + ' ' + seeAllLink(q.correct));
+  }
+  if(!isRight) parts.push('This question will come back later for review.');
+  box.innerHTML = parts.filter(Boolean).map(p => `<p>${p}</p>`).join('');
+  box.classList.add('show');
+}
+document.getElementById('quiz-explain').addEventListener('click', (e)=>{
+  const b = e.target.closest('[data-goto]');
+  if(b){ setFilter(b.dataset.goto); window.scrollTo({top:0, behavior:'smooth'}); }
+});
+
+// ---------- Learn: flashcards ----------
+let currentCard = null;
+let flashDeck = 'all';
+let flashSessionCount = 0;
+const LEARN_LABELS = [...heteroLabels, ...fgLabels];
+
+function deckLabels(){
+  if(flashDeck === 'Heterocycle' || flashDeck === 'Functional group'){
+    return LEARN_LABELS.filter(l => catIndex[l].category === flashDeck);
+  }
+  if(flashDeck === 'weak'){
+    const weak = new Set(weakGroups().map(x => x.label));
+    LEARN_LABELS.forEach(l => { if(progress.cards[l] && progress.cards[l].last === 'l') weak.add(l); });
+    return [...weak];
+  }
+  return LEARN_LABELS;
+}
+
+function newFlashcard(){
+  const labels = deckLabels();
+  const box = document.getElementById('flash-card');
+  if(labels.length === 0){
+    currentCard = null;
+    box.innerHTML = `<div class="empty-state">No weak groups yet. Practice some questions in <b>Quiz Me</b>, or mark flashcards as “still learning”, and they will collect here.</div>`;
+    return;
+  }
+  // cards marked "still learning" come up most often, unseen cards next
+  const weightOf = l => { const c = progress.cards[l]; return !c ? 2 : c.last === 'l' ? 4 : 1; };
+  let candidates = labels;
+  if(currentCard && labels.length > 1) candidates = labels.filter(l => l !== currentCard.label);
+  const total = candidates.reduce((a, l) => a + weightOf(l), 0);
+  let r = Math.random() * total, label = candidates[0];
+  for(const l of candidates){ r -= weightOf(l); if(r <= 0){ label = l; break; } }
+  const drugs = DRUGS.filter(d => d.matches.some(m => m.label === label));
+  const d = drugs[Math.floor(Math.random() * drugs.length)];
+  currentCard = {label, d, others: shuffle(drugs.filter(x => x !== d)).slice(0, 3), flipped:false};
+  renderFlashcard();
+}
+
+function renderFlashcard(){
+  const {label, d, others, flipped} = currentCard;
+  const info = catIndex[label];
+  const c = progress.cards[label];
+  const history = c ? `You have marked this ${c.k || 0}× known, ${c.l || 0}× still learning.` : 'New card.';
+  document.getElementById('flash-card').innerHTML = `
+    <div class="flash-prompt"><b>${escHtml(d.name)}</b> (${escHtml(d.brand)}) — ${escHtml(d.class.split(" (")[0])}.<br>
+      Which group is highlighted?</div>
+    ${structSvgWithBox(d, label)}
+    ${flipped ? '' : `<button class="btn" id="flash-flip">Show answer</button>`}
+    <div class="flash-back ${flipped ? 'show' : ''}">
+      <div class="flash-cat">${escHtml(info.category)}</div>
+      <div class="flash-name">${escHtml(label)}</div>
+      <div class="ab-note ${info.acidBase}">${abDisplayLabel(info.acidBase)} — ${escHtml(info.pka)}</div>
+      <div class="flash-examples">Also found in: ${others.map(x => escHtml(x.name)).join(', ') || 'no other drugs in this set'}.
+        ${seeAllLink(label)}</div>
+      <div class="flash-actions">
+        <button class="btn" id="flash-knew">✓ I knew it</button>
+        <button class="btn ghost" id="flash-learning">✗ Still learning</button>
+      </div>
+    </div>
+    <div class="flash-meta">${history} Cards reviewed this session: ${flashSessionCount}</div>`;
+  const flip = document.getElementById('flash-flip');
+  if(flip) flip.addEventListener('click', flipFlashcard);
+  document.getElementById('flash-knew').addEventListener('click', ()=>rateFlashcard(true));
+  document.getElementById('flash-learning').addEventListener('click', ()=>rateFlashcard(false));
+  document.querySelector('#flash-card [data-goto]')?.addEventListener('click', e => {
+    setFilter(e.target.dataset.goto); window.scrollTo({top:0, behavior:'smooth'});
+  });
+}
+function flipFlashcard(){
+  if(!currentCard || currentCard.flipped) return;
+  currentCard.flipped = true;
+  renderFlashcard();
+  document.getElementById('flash-knew').focus();
+}
+// self-ratings are tracked separately and never count toward quiz mastery
+function rateFlashcard(knew){
+  if(!currentCard || !currentCard.flipped) return;
+  const c = progress.cards[currentCard.label] || {k:0, l:0};
+  if(knew) c.k = (c.k || 0) + 1; else c.l = (c.l || 0) + 1;
+  c.last = knew ? 'k' : 'l';
+  c.t = Date.now();
+  progress.cards[currentCard.label] = c;
+  saveProgress();
+  flashSessionCount++;
+  newFlashcard();
+}
+document.querySelectorAll('#flash-deck-toggle .mode-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    flashDeck = btn.getAttribute('data-deck');
+    document.querySelectorAll('#flash-deck-toggle .mode-btn').forEach(b => b.classList.toggle('active', b === btn));
+    savePrefs();
+    currentCard = null;
+    newFlashcard();
+  });
+});
+
+// ---------- My Progress dashboard ----------
+function scoreOf(e){ return e.ok ? (e.gu ? 0.5 : 1) : 0; } // a lucky guess counts as half
+function masteryStatus(n, pct){
+  if(n < 5) return ['none', 'Not enough data'];
+  if(pct >= 80) return ['strong', 'Strong'];
+  if(pct >= 60) return ['mid', 'Getting there'];
+  return ['weak', 'Needs work'];
+}
+function dayKey(t){
+  const d = new Date(t);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function summarize(entries){
+  const n = entries.length;
+  const score = entries.reduce((a, e) => a + scoreOf(e), 0);
+  return {n, pct: n ? Math.round(100 * score / n) : 0, guesses: entries.filter(e => e.gu).length};
+}
+function groupStats(){
+  const by = {};
+  progress.log.forEach(e => {
+    if(!e.g || !catIndex[e.g]) return;
+    (by[e.g] = by[e.g] || []).push(e);
+  });
+  return Object.entries(by).map(([label, list]) => ({label, ...summarize(list)}));
+}
+function weakGroups(){
+  return groupStats().filter(x => x.n >= 3 && x.pct < 80).sort((a, b) => a.pct - b.pct || b.n - a.n);
+}
+function dayStreak(){
+  const days = new Set(progress.log.map(e => dayKey(e.t)));
+  const d = new Date();
+  if(!days.has(dayKey(d.getTime()))) d.setDate(d.getDate() - 1); // streak survives until the day ends
+  let streak = 0;
+  while(days.has(dayKey(d.getTime()))){ streak++; d.setDate(d.getDate() - 1); }
+  return streak;
+}
+function masteryRow(name, st, buttonHtml){
+  const [cls, word] = masteryStatus(st.n, st.pct);
+  return `<div class="mastery-row">
+    <div>${escHtml(name)}<span class="status-chip ${cls}">${word}</span></div>
+    <div class="mastery-bar" role="img" aria-label="${st.n ? st.pct + '% mastery' : 'not tried yet'}"><span style="width:${st.n ? st.pct : 0}%"></span></div>
+    <div class="mastery-meta">${st.n ? `${st.pct}% · ${st.n} answered` : 'not tried yet'} ${buttonHtml}</div>
+  </div>`;
+}
+
+function renderProgress(){
+  const box = document.getElementById('progress-content');
+  const log = progress.log;
+  const overall = summarize(log);
+  const weekAgo = Date.now() - 7 * 86400000;
+  const week = summarize(log.filter(e => e.t >= weekAgo));
+  const cardsSeen = Object.values(progress.cards).reduce((a, c) => a + (c.k || 0) + (c.l || 0), 0);
+  let html = STORAGE_OK ? '' : `<div class="storage-warning">This browser is not letting the page save anything (often because of a private/incognito window or strict privacy settings). Your progress will be lost when you close the page.</div>`;
+
+  html += `<div class="dash-tiles">
+    <div class="dash-tile"><div class="k">Questions answered</div><div class="v">${overall.n}</div><div class="s">${overall.guesses} marked as guesses</div></div>
+    <div class="dash-tile"><div class="k">Overall mastery</div><div class="v">${overall.n ? overall.pct + '%' : '—'}</div><div class="s">correct answers, guesses count half</div></div>
+    <div class="dash-tile"><div class="k">Last 7 days</div><div class="v">${week.n}</div><div class="s">${week.n ? week.pct + '% mastery' : 'no questions yet'}</div></div>
+    <div class="dash-tile"><div class="k">Day streak</div><div class="v">${dayStreak()}</div><div class="s">days in a row with practice</div></div>
+    <div class="dash-tile"><div class="k">To review</div><div class="v">${progress.mistakes.length}</div><div class="s">${cardsSeen} flashcards reviewed</div></div>
+  </div>`;
+
+  if(log.length === 0){
+    html += `<div class="dash-card"><h2>Nothing here yet</h2><p class="hint">Answer some questions in <b>Quiz Me</b> and your results will appear here: which topics you are strong in, which groups trip you up, and a list of questions to review.</p>
+      <button class="btn" data-action="go-quiz">Start practicing</button></div>`;
+    box.innerHTML = html;
+    wireDashboard(box);
+    return;
+  }
+
+  // weakest groups
+  const weak = weakGroups().slice(0, 8);
+  html += `<div class="dash-card"><h2>Groups to work on</h2>
+    <p class="hint">Heterocycles and functional groups where your mastery is below 80% (needs at least 3 answers about a group). Covers the Identify, Click the Group, Acid/Base, and Degree questions.</p>`;
+  if(weak.length){
+    html += weak.map(w => masteryRow(w.label, w, `<button class="link-btn" data-focus="${escAttr(w.label)}">Practice</button>`)).join('');
+    html += `<div class="dash-actions"><button class="btn" data-action="focus-weak">Practice all ${weak.length} of these</button>
+      <button class="btn ghost" data-action="flash-weak">Flashcards for these</button></div>`;
+  } else {
+    html += `<div class="dash-empty">No weak spots found yet. Either you are doing great, or you need a few more answers per group to tell.</div>`;
+  }
+  html += `</div>`;
+
+  // by question type
+  html += `<div class="dash-card"><h2>By question type</h2><p class="hint">Status appears after 5 answers: <b>Strong</b> is 80% or higher, <b>Getting there</b> is 60–79%, <b>Needs work</b> is below 60%.</p>`;
+  html += Object.keys(QUIZ_CAT_NAMES).map(cat =>
+    masteryRow(QUIZ_CAT_NAMES[cat], summarize(log.filter(e => e.c === cat)),
+      `<button class="link-btn" data-type="${escAttr(cat)}">Practice</button>`)).join('');
+  html += `</div>`;
+
+  // activity, last 14 days
+  const days = [];
+  for(let i = 13; i >= 0; i--){
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = dayKey(d.getTime());
+    days.push({d, ...summarize(log.filter(e => dayKey(e.t) === key))});
+  }
+  const maxN = Math.max(1, ...days.map(x => x.n));
+  html += `<div class="dash-card"><h2>Questions answered, last 14 days</h2>
+    <div class="activity-chart">${days.map(x => {
+      const label = `${x.d.toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'})}: ${x.n} answered${x.n ? `, ${x.pct}% mastery` : ''}`;
+      return `<div class="activity-col" tabindex="0" aria-label="${escAttr(label)}"><div class="bar" style="height:${x.n ? Math.max(3, 100 * x.n / maxN) : 0}%"></div><div class="tip">${escHtml(label)}</div></div>`;
+    }).join('')}</div>
+    <div class="activity-labels">${days.map(x => `<span>${x.d.getDate()}</span>`).join('')}</div>
+  </div>`;
+
+  // review list
+  html += `<div class="dash-card"><h2>Questions to review</h2>
+    <p class="hint">Questions you missed or guessed on. They also come back on their own every so often during practice.</p>`;
+  const recent = progress.mistakes.slice(-8).reverse();
+  if(recent.length){
+    html += recent.map(mk => {
+      const d = DRUG_BY_SLUG[mk.s];
+      const cat = mk.kind === 'identify' && catIndex[mk.g] ? catIndex[mk.g].category : mk.kind;
+      return `<div class="mistake-row"><div>${escHtml(d ? d.name : mk.s)}${mk.g ? ` <span>· ${escHtml(mk.g)}</span>` : ''}</div><span>${escHtml(QUIZ_CAT_NAMES[cat] || cat)}</span></div>`;
+    }).join('');
+    html += `<div class="dash-actions"><button class="btn" data-action="review">Review all ${progress.mistakes.length}</button></div>`;
+  } else {
+    html += `<div class="dash-empty">Nothing to review. 🎉</div>`;
+  }
+  html += `</div>`;
+
+  // full table (also the accessible / printable view of the data above)
+  const all = groupStats().sort((a, b) => a.label.localeCompare(b.label));
+  html += `<div class="dash-card"><h2>Every group you have practiced</h2>
+    <details class="dash-details"><summary>Show table (${all.length} groups)</summary>
+    <table class="dash-table"><thead><tr><th>Group</th><th>Type</th><th class="num">Answered</th><th class="num">Mastery</th><th>Status</th></tr></thead><tbody>
+    ${all.map(g => `<tr><td>${escHtml(g.label)}</td><td>${escHtml(catIndex[g.label].category)}</td><td class="num">${g.n}</td><td class="num">${g.pct}%</td><td>${masteryStatus(g.n, g.pct)[1]}</td></tr>`).join('')}
+    </tbody></table></details></div>`;
+
+  box.innerHTML = html;
+  wireDashboard(box);
+}
+
+function wireDashboard(box){
+  box.querySelectorAll('[data-focus]').forEach(b => b.addEventListener('click', () => startFocusPractice([b.dataset.focus])));
+  box.querySelectorAll('[data-type]').forEach(b => b.addEventListener('click', () => startTypePractice(b.dataset.type)));
+  box.querySelectorAll('[data-action]').forEach(b => b.addEventListener('click', () => {
+    const a = b.dataset.action;
+    if(a === 'focus-weak') startFocusPractice(weakGroups().slice(0, 8).map(w => w.label));
+    if(a === 'review') startReview();
+    if(a === 'go-quiz') showTab('quiz');
+    if(a === 'flash-weak') document.querySelector('#flash-deck-toggle [data-deck="weak"]').click(), showTab('learn');
+  }));
+}
+
+// ---------- Backup, restore, print ----------
+const nameInput = document.getElementById('student-name');
+nameInput.addEventListener('input', ()=>{ prefs.name = nameInput.value; savePrefs(); });
+
+function setBackupStatus(msg){ document.getElementById('progress-backup-status').textContent = msg; }
+
+document.getElementById('progress-print').addEventListener('click', ()=>{
+  const who = nameInput.value.trim();
+  document.getElementById('print-header').textContent =
+    `Rx Substructure Atlas progress report${who ? ' for ' + who : ''}, printed ${new Date().toLocaleDateString()}`;
+  renderProgress();
+  window.print();
+});
+
+document.getElementById('progress-download').addEventListener('click', ()=>{
+  const payload = {app:'rxatlas', v:1, exported:new Date().toISOString(), name:nameInput.value.trim(), progress, bank};
+  const blob = new Blob([JSON.stringify(payload)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `rxatlas-progress-${dayKey(Date.now())}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  setBackupStatus('Backup downloaded. Keep the file somewhere safe (for example OneDrive or Google Drive).');
+});
+
+document.getElementById('progress-restore').addEventListener('click', ()=>document.getElementById('progress-restore-file').click());
+document.getElementById('progress-restore-file').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  try{
+    const data = JSON.parse(await file.text());
+    if(!data || data.app !== 'rxatlas' || !data.progress) throw new Error('not an Rx Atlas backup');
+    const restored = normalizeProgress(data.progress);
+    if(!confirm(`Replace your current progress (${progress.log.length} answers) with this backup (${restored.log.length} answers, saved ${new Date(data.exported).toLocaleDateString()})?`)) return;
+    progress = restored;
+    if(Array.isArray(data.bank)) bank = data.bank.filter(b => b && DRUGS.some(d => d.name === b.name));
+    if(data.name && !nameInput.value) { nameInput.value = data.name; prefs.name = data.name; savePrefs(); }
+    saveProgress();
+    updateBankCount();
+    renderProgress();
+    setBackupStatus(`Restored ${restored.log.length} answers from the backup.`);
+  } catch(err){
+    console.error(err);
+    setBackupStatus('That file could not be read. Choose a backup file downloaded from this page (it ends in .json).');
+  }
+});
+
+document.getElementById('progress-reset').addEventListener('click', ()=>{
+  if(!confirm('Erase all of your saved quiz results, flashcard ratings, and review list? Your question bank is kept. This cannot be undone. Consider downloading a backup first.')) return;
+  progress = emptyProgress();
+  reviewMode = false;
+  saveProgress();
+  renderProgress();
+  setBackupStatus('Progress reset.');
+});
+
+// ---------- Keyboard shortcuts ----------
+document.addEventListener('keydown', (e)=>{
+  if(e.ctrlKey || e.metaKey || e.altKey) return;
+  if(document.getElementById('drug-modal').classList.contains('show')) return;
+  const tag = (e.target.tagName || '').toLowerCase();
+  if(tag === 'input' || tag === 'textarea' || tag === 'select') return;
+  const k = e.key.toLowerCase();
+  // Enter/Space on a button inside the card should just press that button;
+  // anywhere else (e.g. a tab button still focused after a click) they act as shortcuts
+  const cardButton = tag === 'button' && e.target.closest('#quiz-card, #flash-card');
+  if(currentTab === 'quiz'){
+    if(document.getElementById('quiz-card').style.display === 'none') return; // results summary showing
+    let idx = ['1','2','3','4'].indexOf(k);
+    if(idx < 0) idx = ['a','b','c','d'].indexOf(k);
+    if(idx >= 0){
+      const btn = document.querySelectorAll('#quiz-options .opt-btn')[idx];
+      if(btn && !btn.disabled){ e.preventDefault(); btn.click(); }
+    } else if(k === 'g'){
+      document.getElementById('quiz-guess').click();
+    } else if(k === 'enter' && !cardButton && (!currentQuiz || currentQuiz.answered)){
+      e.preventDefault();
+      document.getElementById('quiz-next').click();
+    }
+  } else if(currentTab === 'learn' && currentCard){
+    if((k === ' ' || k === 'enter') && !cardButton){ e.preventDefault(); flipFlashcard(); }
+    else if(k === '1' && currentCard.flipped) rateFlashcard(true);
+    else if(k === '2' && currentCard.flipped) rateFlashcard(false);
+  }
+});
+
 // ---------- init ----------
 document.getElementById('drug-count').textContent = DRUGS.length;
+if(Array.isArray(prefs.cats)){
+  const valid = prefs.cats.filter(c => QUIZ_CAT_NAMES[c]);
+  if(valid.length) selectedCategories = new Set(valid);
+}
+syncCategoryButtons();
+if(prefs.deck){
+  const deckBtn = document.querySelector(`#flash-deck-toggle [data-deck="${prefs.deck}"]`);
+  if(deckBtn){
+    flashDeck = prefs.deck;
+    document.querySelectorAll('#flash-deck-toggle .mode-btn').forEach(b => b.classList.toggle('active', b === deckBtn));
+  }
+}
+nameInput.value = prefs.name || '';
 updateBankCount();
+updateReviewCount();
 renderCatLists();
 renderGrid();
+showTab(prefs.tab || 'browse');
 </script>
 </body>
 </html>
