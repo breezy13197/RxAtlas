@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Rx Substructure Atlas — Functional Group &amp; Heterocycle Finder</title>
+<style>
+  :root{
+    --ink:#132a2c;
+    --ink-soft:#2a4548;
+    --parchment:#f3ede1;
+    --parchment-deep:#e9e0cd;
+    --paper-line:#d8cdb3;
+    --amber:#c9902f;
+    --amber-deep:#a5741e;
+    --sage:#4f6f52;
+    --sage-soft:#e4ebe0;
+    --clay:#a3483c;
+    --clay-soft:#f1e0dc;
+    --acid:#a3483c;
+    --acid-soft:#f1e0dc;
+    --base:#2e5f7a;
+    --base-soft:#dfeaf0;
+    --white:#fffdf8;
+    --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, 'IBM Plex Mono', Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:var(--sans);
+    background:var(--ink);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{ display:flex; min-height:100vh; }
+
+  /* ---------- Sidebar ---------- */
+  #sidebar{
+    width:290px; min-width:290px;
+    background:var(--ink);
+    color:var(--parchment);
+    padding:22px 18px 18px;
+    display:flex; flex-direction:column;
+    height:100vh; position:sticky; top:0; overflow-y:auto;
+  }
+  .brand{
+    font-family:var(--serif); font-size:20px; line-height:1.25;
+    letter-spacing:.2px; color:var(--white); margin-bottom:2px;
+  }
+  .brand em{ color:var(--amber); font-style:normal; }
+  .brand-sub{
+    font-size:11px; text-transform:uppercase; letter-spacing:1.4px;
+    color:#8fa6a3; margin-bottom:18px;
+  }
+  .side-search{
+    width:100%; padding:9px 11px; border-radius:6px; border:1px solid #3a5457;
+    background:#0e2224; color:var(--parchment); font-size:13px; margin-bottom:14px;
+    font-family:var(--sans);
+  }
+  .side-search::placeholder{ color:#6d8886; }
+  .side-search:focus{ outline:2px solid var(--amber); outline-offset:1px; }
+
+  .group-heading{
+    font-size:11px; text-transform:uppercase; letter-spacing:1.3px;
+    color:#7f9997; margin:16px 0 6px; display:flex; justify-content:space-between;
+  }
+  .cat-list{ list-style:none; margin:0; padding:0; }
+  .cat-item{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:6px 8px; border-radius:5px; cursor:pointer; font-size:13.5px;
+    color:#d8e4e2; margin-bottom:1px; border-left:3px solid transparent;
+  }
+  .cat-item:hover{ background:#1c3a3c; }
+  .cat-item .left{ display:flex; align-items:center; gap:7px; min-width:0; }
+  .cat-item.active{ background:#20403f; border-left-color:var(--amber); color:var(--white); font-weight:600; }
+  .cat-item .cnt{
+    font-family:var(--mono); font-size:11px; color:#7f9997; min-width:20px; text-align:right;
+  }
+  .cat-item.active .cnt{ color:var(--amber); }
+  .cat-item.dim{ opacity:.35; }
+
+  #clear-filter{
+    margin-top:14px; background:none; border:1px solid #3a5457; color:#c7d8d6;
+    font-size:12px; padding:7px 10px; border-radius:6px; cursor:pointer; font-family:var(--sans);
+  }
+  #clear-filter:hover{ border-color:var(--amber); color:var(--white); }
+
+  .side-footer{ margin-top:auto; padding-top:16px; font-size:11px; color:#5f7977; line-height:1.5; }
+  .side-footer a{ color:#9fb8b5; }
+
+  /* ---------- Main ---------- */
+  #main{ flex:1; background:var(--parchment); min-height:100vh; display:flex; flex-direction:column; }
+
+  #topbar{
+    padding:20px 30px 14px; border-bottom:1px solid var(--paper-line);
+    display:flex; align-items:flex-end; justify-content:space-between; gap:18px; flex-wrap:wrap;
+  }
+  #topbar h1{
+    font-family:var(--serif); font-weight:400; font-size:24px; margin:0 0 4px; color:var(--ink);
+  }
+  #topbar .sub{ font-size:13px; color:var(--ink-soft); max-width:640px; }
+  #topbar .sub b{ color:var(--amber-deep); }
+
+  .tabs{ display:flex; gap:4px; }
+  .tab-btn{
+    font-family:var(--sans); font-size:13px; padding:8px 16px; border-radius:7px 7px 0 0;
+    border:1px solid var(--paper-line); border-bottom:none; background:var(--parchment-deep);
+    color:var(--ink-soft); cursor:pointer;
+  }
+  .tab-btn.active{ background:var(--white); color:var(--ink); font-weight:600; }
+  .tab-count{
+    display:inline-block; background:var(--sage); color:#fff; font-family:var(--mono); font-size:10.5px;
+    border-radius:9px; padding:1px 6px; margin-left:4px; vertical-align:1px;
+  }
+  .tab-count.zero{ display:none; }
+
+  .search-row{
+    padding:14px 30px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    border-bottom:1px solid var(--paper-line); background:var(--white);
+  }
+  #drug-search{
+    flex:1; min-width:220px; padding:9px 34px 9px 13px; border-radius:7px; border:1px solid var(--paper-line);
+    font-size:13.5px; font-family:var(--sans); background:var(--parchment); width:100%;
+  }
+  #drug-search:focus{ outline:2px solid var(--amber); outline-offset:1px; }
+  .search-input-wrap{ position:relative; flex:1; min-width:220px; display:flex; }
+  .search-clear-btn{
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    width:20px; height:20px; border-radius:50%; border:none; background:var(--paper-line);
+    color:var(--ink-soft); font-size:14px; line-height:1; cursor:pointer; padding:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .search-clear-btn:hover{ background:var(--clay); color:#fff; }
+  .result-count{ font-size:12.5px; color:var(--ink-soft); font-family:var(--mono); white-space:nowrap; }
+  .bank-pill{
+    margin-left:auto; background:var(--sage); color:#fff; font-size:12.5px; padding:8px 14px;
+    border-radius:20px; cursor:pointer; border:none; font-family:var(--sans); font-weight:600;
+    display:flex; align-items:center; gap:7px;
+  }
+  .bank-pill:hover{ background:#3f5c42; }
+  .bank-pill .n{ background:rgba(255,255,255,.25); border-radius:10px; padding:1px 8px; font-family:var(--mono); }
+
+  #content{ flex:1; padding:22px 30px 60px; overflow-y:auto; }
+
+  .active-filter-banner{
+    display:none; align-items:center; gap:10px; background:var(--white);
+    border:1px solid var(--paper-line); border-left:4px solid var(--amber);
+    padding:12px 16px; border-radius:8px; margin-bottom:18px; font-size:13.5px;
+  }
+  .active-filter-banner.show{ display:flex; }
+  .active-filter-banner b{ font-family:var(--serif); font-size:16px; font-weight:400; }
+  .active-filter-banner .smarts-note{ font-family:var(--mono); font-size:11.5px; color:var(--ink-soft); }
+  .banner-clear-btn{ margin-left:auto; padding:8px 16px; font-size:12.5px; flex:none; white-space:nowrap; }
+
+  /* ---------- Drug grid & cards ---------- */
+  #grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:16px; }
+  .card{
+    background:var(--white); border:1px solid var(--paper-line); border-radius:10px;
+    overflow:hidden; display:flex; flex-direction:column; transition:box-shadow .15s, transform .15s;
+    position:relative; cursor:pointer;
+  }
+  .card:hover{ box-shadow:0 6px 18px rgba(19,42,44,.12); transform:translateY(-2px); }
+  .struct-wrap{
+    position:relative; background:#fffef9; border-bottom:1px solid var(--paper-line);
+    display:flex; align-items:center; justify-content:center;
+    width:100%; aspect-ratio:260/200; height:auto;
+  }
+  .struct-wrap svg{ width:100%; height:100%; display:block; }
+  .hl-box{
+    position:absolute; border:2px dashed var(--amber); border-radius:3px;
+    background:rgba(201,144,47,0.12); pointer-events:none;
+  }
+  .stereo-dot{
+    position:absolute; width:16px; height:16px; border-radius:50%;
+    background:var(--amber); border:2px solid var(--white); transform:translate(-50%,-50%);
+    box-shadow:0 0 0 1.5px var(--amber-deep); pointer-events:none;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:8px; font-weight:700; color:#fff;
+  }
+  .hbond-dot{
+    position:absolute; width:14px; height:14px; border-radius:50%;
+    background:var(--sage); border:2px solid var(--white); transform:translate(-50%,-50%);
+    box-shadow:0 0 0 1.5px #3a5439; pointer-events:none;
+  }
+  .hbond-dot.acceptor{
+    background:#6b4e8e; box-shadow:0 0 0 1.5px #4a3563;
+  }
+  .letter-dot{
+    position:absolute; width:22px; height:22px; border-radius:50%;
+    background:#a3325a; border:2px solid var(--white); transform:translate(-50%,-50%);
+    box-shadow:0 0 0 1.5px #7a2543; pointer-events:none;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:12px; font-weight:700; color:#fff;
+  }
+  .letter-dot.correct-reveal{ background:var(--sage); box-shadow:0 0 0 1.5px #3a5439; }
+  .letter-dot.wrong-reveal{ background:var(--clay); box-shadow:0 0 0 1.5px #7a2f26; opacity:.6; }
+  .click-marker{
+    position:absolute; width:14px; height:14px; border-radius:50%;
+    border:2px solid var(--white); transform:translate(-50%,-50%); pointer-events:none;
+  }
+  .click-marker.correct-reveal{ background:var(--sage); box-shadow:0 0 0 1.5px #3a5439; }
+  .click-marker.wrong-reveal{ background:var(--clay); box-shadow:0 0 0 1.5px #7a2f26; }
+  .locate-hint{ font-size:13px; color:var(--ink-soft); font-style:italic; padding:10px 0; }
+  .card .body{ padding:12px 14px 14px; display:flex; flex-direction:column; gap:4px; flex:1; }
+  .card .name{ font-family:var(--serif); font-size:16px; color:var(--ink); line-height:1.2; }
+  .card .brand{ font-size:11.5px; color:var(--amber-deep); font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
+  .card .cls{ font-size:12px; color:var(--ink-soft); line-height:1.35; margin-top:2px; }
+  .card .meta{ font-family:var(--mono); font-size:10.5px; color:#8a8371; margin-top:4px; }
+  .tags{ display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+  .tag{
+    font-size:10px; padding:2px 7px; border-radius:10px; font-family:var(--mono);
+    background:var(--sage-soft); color:var(--sage); border:1px solid transparent; cursor:pointer;
+    white-space:nowrap;
+  }
+  .tag.fg{ background:var(--clay-soft); color:var(--clay); }
+  .tag.current{ background:var(--amber); color:#fff; font-weight:700; }
+  .tag.ab-acidic{ border-color:var(--acid); }
+  .tag.ab-basic{ border-color:var(--base); }
+  .ab-dot{ width:7px; height:7px; border-radius:50%; flex:none; }
+  .ab-dot.acidic{ background:var(--acid); }
+  .ab-dot.basic{ background:var(--base); }
+  .ab-dot.neutral{ background:#9aa8a6; }
+  .ab-note{
+    font-size:11px; padding:3px 8px; border-radius:5px; margin-top:6px; width:fit-content;
+    font-family:var(--mono);
+  }
+  .ab-note.acidic{ background:var(--acid-soft); color:var(--acid); }
+  .ab-note.basic{ background:var(--base-soft); color:var(--base); }
+  .ab-note.neutral{ background:var(--parchment-deep); color:var(--ink-soft); }
+  .add-btn{
+    margin-top:10px; align-self:flex-start; font-size:11.5px; padding:5px 11px; border-radius:6px;
+    border:1px solid var(--paper-line); background:var(--parchment); color:var(--ink-soft); cursor:pointer;
+    font-family:var(--sans);
+  }
+  .add-btn.added{ background:var(--sage); color:#fff; border-color:var(--sage); }
+
+  .empty-state{
+    text-align:center; padding:70px 20px; color:var(--ink-soft);
+  }
+  .empty-state .glyph{ font-size:34px; margin-bottom:10px; }
+
+  /* ---------- Quiz tab ---------- */
+  #quiz-panel{ max-width:640px; margin:0 auto; }
+  .quiz-mode-row{ display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .quiz-set-panel{
+    background:var(--white); border:1px solid var(--paper-line); border-radius:10px;
+    padding:14px 16px; margin-bottom:16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  .quiz-set-panel label{ font-size:12.5px; color:var(--ink-soft); }
+  .quiz-set-input{
+    width:56px; padding:7px 8px; border-radius:6px; border:1px solid var(--paper-line);
+    font-family:var(--mono); font-size:13px; text-align:center;
+  }
+  .quiz-set-status{ font-size:12px; color:var(--ink-soft); flex-basis:100%; }
+  .quiz-set-list{
+    max-height:150px; overflow-y:auto; font-size:12px; color:var(--ink-soft);
+    background:var(--parchment); border-radius:6px; padding:8px 10px; flex-basis:100%;
+    font-family:var(--mono); display:none;
+  }
+  .quiz-set-list.show{ display:block; }
+  .quiz-set-list div{ padding:2px 0; }
+
+  .quiz-set-progress{
+    display:flex; align-items:center; justify-content:space-between; max-width:640px; margin:0 auto 10px;
+    font-family:var(--mono); font-size:12.5px; color:var(--ink-soft);
+  }
+  .quiz-set-exit-btn{
+    background:none; border:none; color:var(--clay); font-size:12px; cursor:pointer; text-decoration:underline;
+    font-family:var(--sans);
+  }
+  .quiz-summary-score{
+    font-family:var(--serif); font-size:26px; text-align:center; padding:20px 26px 6px; color:var(--ink);
+  }
+  .quiz-summary-breakdown{ padding:6px 26px 20px; display:flex; flex-direction:column; gap:8px; }
+  .quiz-summary-row{
+    display:flex; justify-content:space-between; align-items:center; font-size:13.5px;
+    padding:8px 12px; border-radius:7px; background:var(--parchment);
+  }
+  .quiz-summary-row .frac{ font-family:var(--mono); font-weight:700; }
+  .quiz-summary-row .frac.perfect{ color:var(--sage); }
+  .quiz-summary-row .frac.weak{ color:var(--clay); }
+  .quiz-mode-label{ font-size:12.5px; color:var(--ink-soft); }
+  .quiz-mode-toggle{ display:flex; gap:4px; background:var(--parchment-deep); padding:3px; border-radius:8px; flex-wrap:wrap; }
+  .mode-btn{
+    font-family:var(--sans); font-size:12.5px; padding:6px 12px; border-radius:6px; border:none;
+    background:transparent; color:var(--ink-soft); cursor:pointer;
+  }
+  .mode-btn:hover{ color:var(--ink); }
+  .mode-btn.active{ background:var(--white); color:var(--ink); font-weight:600; box-shadow:0 1px 2px rgba(19,42,44,.12); }
+  .quiz-card{
+    background:var(--white); border:1px solid var(--paper-line); border-radius:12px; padding:26px;
+  }
+  .quiz-stem{ font-size:14px; color:var(--ink); line-height:1.5; margin-bottom:14px; }
+  .quiz-stem b{ font-family:var(--serif); font-weight:400; font-size:16px; }
+  .quiz-struct{ margin-bottom:16px; }
+  .quiz-struct .struct-wrap{ border-radius:8px; border:1px solid var(--paper-line); border-bottom:1px solid var(--paper-line); }
+  .quiz-options{ display:flex; flex-direction:column; gap:8px; }
+  .opt-btn{
+    text-align:left; padding:11px 14px; border-radius:8px; border:1px solid var(--paper-line);
+    background:var(--parchment); font-family:var(--sans); font-size:13.5px; cursor:pointer; color:var(--ink);
+    display:flex; gap:10px; align-items:center;
+  }
+  .opt-btn .letter{
+    font-family:var(--mono); font-weight:700; color:var(--amber-deep); width:16px;
+  }
+  .opt-btn:hover{ border-color:var(--amber); }
+  .opt-btn.correct{ background:var(--sage-soft); border-color:var(--sage); }
+  .opt-btn.wrong{ background:var(--clay-soft); border-color:var(--clay); }
+  .opt-btn[disabled]{ cursor:default; }
+  .quiz-footer{ display:flex; justify-content:space-between; align-items:center; margin-top:18px; gap:10px; flex-wrap:wrap; }
+  .quiz-feedback{ font-size:13px; min-height:18px; color:var(--ink-soft); }
+  .btn{
+    font-family:var(--sans); font-size:13px; padding:9px 16px; border-radius:7px; border:1px solid var(--ink);
+    background:var(--ink); color:var(--white); cursor:pointer;
+  }
+  .btn:hover{ background:var(--ink-soft); }
+  .btn.ghost{ background:var(--white); color:var(--ink); border-color:var(--paper-line); }
+  .btn.ghost:hover{ border-color:var(--ink); }
+  .btn:disabled{ opacity:.4; cursor:default; }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(19,42,44,.55); z-index:50;
+    align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal{
+    background:var(--white); border-radius:12px; max-width:720px; width:100%; max-height:82vh;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  .modal-head{
+    padding:18px 22px; border-bottom:1px solid var(--paper-line); display:flex; justify-content:space-between; align-items:center;
+  }
+  .modal-head h2{ font-family:var(--serif); font-weight:400; font-size:19px; margin:0; }
+  .modal-close{ background:none; border:none; font-size:20px; cursor:pointer; color:var(--ink-soft); line-height:1; }
+  .modal-body{ padding:18px 22px; overflow-y:auto; }
+
+  .drug-modal-box{ max-width:640px; }
+  .drug-modal-layout{ display:flex; gap:20px; flex-wrap:wrap; }
+  .drug-modal-struct{
+    flex:1 1 280px; min-width:240px; background:#fffef9; border:1px solid var(--paper-line);
+    border-radius:8px; aspect-ratio:260/200; position:relative;
+  }
+  .drug-modal-struct .struct-wrap{ border:none; border-radius:8px; }
+  .drug-modal-info{ flex:1 1 200px; min-width:180px; display:flex; flex-direction:column; gap:5px; }
+  .drug-modal-info .brand{ font-size:12px; color:var(--amber-deep); font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
+  .drug-modal-info .cls{ font-size:13.5px; color:var(--ink-soft); line-height:1.4; }
+  .drug-modal-info .meta{ font-family:var(--mono); font-size:11.5px; color:#8a8371; margin-top:4px; }
+  .drug-modal-info .add-btn{ margin-top:12px; align-self:flex-start; }
+  @media (max-width: 520px){
+    .drug-modal-layout{ flex-direction:column; }
+  }
+
+  .bank-panel-card{
+    background:var(--white); border:1px solid var(--paper-line); border-radius:12px;
+    max-width:720px; margin:0 auto; overflow:hidden;
+  }
+  .bank-panel-head{
+    padding:18px 22px; border-bottom:1px solid var(--paper-line); display:flex; justify-content:space-between; align-items:center;
+  }
+  .bank-panel-head h2{ font-family:var(--serif); font-weight:400; font-size:19px; margin:0; }
+  .bank-panel-body{ padding:18px 22px; }
+  #bank-rows{ max-height:340px; overflow-y:auto; }
+  .bank-panel-foot{ padding:14px 22px; border-top:1px solid var(--paper-line); display:flex; gap:10px; justify-content:flex-end; }
+
+  .bank-row{
+    display:flex; justify-content:space-between; align-items:center; padding:9px 0;
+    border-bottom:1px solid var(--parchment-deep); font-size:13px; gap:10px;
+  }
+  .bank-row .info b{ font-family:var(--serif); font-weight:400; }
+  .bank-row .info span{ color:var(--ink-soft); font-size:12px; }
+  .bank-row .rm{ background:none; border:none; color:var(--clay); cursor:pointer; font-size:12px; }
+  #export-box{
+    width:100%; height:200px; margin-top:14px; font-family:var(--mono); font-size:12px;
+    padding:10px; border-radius:7px; border:1px solid var(--paper-line); background:var(--parchment);
+    resize:vertical;
+  }
+  .modal-foot{ padding:14px 22px; border-top:1px solid var(--paper-line); display:flex; gap:10px; justify-content:flex-end; }
+
+  .sidebar-toggle-btn{ display:none; }
+
+  @media (max-width: 820px){
+    #sidebar{ position:relative; height:auto; width:100%; min-width:0; }
+    #app{ flex-direction:column; }
+
+    .sidebar-toggle-btn{
+      display:block; width:100%; text-align:left; margin:12px 0 4px; padding:11px 14px;
+      background:#1c3a3c; border:1px solid #3a5457; color:var(--white); border-radius:7px;
+      font-family:var(--sans); font-size:14px; cursor:pointer;
+    }
+    #sidebar-collapsible{ display:none; }
+    #sidebar-collapsible.open{ display:block; margin-top:10px; }
+
+    #topbar{ padding:14px 16px 12px; }
+    #topbar h1{ font-size:20px; }
+    .search-row{ padding:12px 16px; }
+    #content{ padding:16px 16px 60px; }
+    .tab-btn{ padding:10px 14px; font-size:13.5px; }
+
+    #grid{ grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:12px; }
+    .card .name{ font-size:15px; }
+    .tag{ font-size:11px; padding:5px 10px; }
+    .add-btn{ padding:9px 15px; font-size:13px; }
+
+    .quiz-card{ padding:16px; }
+    .quiz-mode-toggle .mode-btn{ padding:9px 14px; font-size:13.5px; }
+    .quiz-set-panel{ padding:12px; }
+    .opt-btn{ padding:14px 15px; font-size:14.5px; }
+    .btn{ padding:11px 18px; font-size:14px; }
+
+    .modal-overlay{ padding:10px; }
+    .modal-body{ padding:16px; }
+    .modal-head{ padding:16px; }
+    .modal-foot{ padding:12px 16px; flex-wrap:wrap; }
+    .bank-panel-body{ padding:16px; }
+    .bank-panel-head{ padding:16px; flex-wrap:wrap; gap:10px; }
+    .bank-panel-foot{ padding:12px 16px; flex-wrap:wrap; }
+  }
+
+  @media (max-width: 420px){
+    #grid{ grid-template-columns:1fr 1fr; }
+    .quiz-mode-toggle{ justify-content:stretch; }
+    .quiz-mode-toggle .mode-btn{ flex:1 1 auto; text-align:center; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <aside id="sidebar">
+    <div class="brand">Rx Substructure <em>Atlas</em></div>
+    <div class="brand-sub">Med-chem question bank builder</div>
+    <button id="sidebar-toggle" class="sidebar-toggle-btn">☰ Browse by group</button>
+    <div id="sidebar-collapsible">
+      <input id="cat-search" class="side-search" type="text" placeholder="Filter groups…">
+      <div id="cat-lists"></div>
+      <button id="clear-filter">Show all drugs</button>
+    </div>
+    <div class="side-footer">
+      <span id="drug-count">—</span> FDA-approved drugs, auto-tagged by SMARTS substructure search (RDKit).<br><br>
+      Click a group to see every drug in the set that contains it, highlighted the way it'd appear on an exam slide.
+    </div>
+  </aside>
+
+  <main id="main">
+    <div id="topbar">
+      <div>
+        <h1>Find drugs by functional group or ring system</h1>
+        <div class="sub">Pick a group on the left, or search by name. Add hits to your <b>question bank</b> as you go, then export.</div>
+      </div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="browse">Browse &amp; Build</button>
+        <button class="tab-btn" data-tab="quiz">Quiz Me</button>
+        <button class="tab-btn" data-tab="bank">Question Bank <span class="tab-count" id="tab-bank-count">0</span></button>
+      </div>
+    </div>
+
+    <div class="search-row" id="browse-search-row">
+      <div class="search-input-wrap">
+        <input id="drug-search" type="text" placeholder="Search by generic name, brand, or drug class…">
+        <button id="drug-search-clear" class="search-clear-btn" title="Clear search" style="display:none;">×</button>
+      </div>
+      <span class="result-count" id="result-count"></span>
+      <button class="bank-pill" id="bank-btn">📋 Question bank <span class="n" id="bank-count">0</span></button>
+    </div>
+
+    <div id="content">
+      <div id="browse-panel">
+        <div class="active-filter-banner" id="filter-banner">
+          <div>
+            <b id="filter-name"></b>
+            <div class="smarts-note" id="filter-smarts"></div>
+          </div>
+          <button class="btn ghost banner-clear-btn" id="banner-clear-filter">Clear filter</button>
+        </div>
+        <div id="grid"></div>
+      </div>
+
+      <div id="quiz-panel" style="display:none;">
+        <div class="quiz-mode-row">
+          <span class="quiz-mode-label">Include (select any):</span>
+          <div class="quiz-mode-toggle" id="quiz-mode-toggle">
+            <button class="mode-btn active" data-cat="Heterocycle">Heterocycles</button>
+            <button class="mode-btn active" data-cat="Functional group">Functional groups</button>
+            <button class="mode-btn active" data-cat="acidbase">Acid / Base</button>
+            <button class="mode-btn active" data-cat="hbond">H-Bond Count</button>
+            <button class="mode-btn active" data-cat="stereo">Stereocenters</button>
+            <button class="mode-btn active" data-cat="ro5">Rule of 5</button>
+            <button class="mode-btn active" data-cat="degree">Degree of Substitution</button>
+            <button class="mode-btn active" data-cat="basicn">Most Basic Nitrogen</button>
+            <button class="mode-btn active" data-cat="locate">Click the Group</button>
+          </div>
+        </div>
+
+        <div class="quiz-set-panel" id="quiz-set-panel">
+          <label for="quiz-set-count">Generate a quiz set:</label>
+          <input type="number" id="quiz-set-count" class="quiz-set-input" min="5" max="25" value="10">
+          <span style="font-size:12px; color:var(--ink-soft);">questions (5–25)</span>
+          <button class="btn ghost" id="quiz-set-generate">Generate set</button>
+          <button class="btn ghost" id="quiz-set-take" disabled>Take quiz in browser</button>
+          <button class="btn" id="quiz-set-export" disabled>Export to Word (.docx)</button>
+          <div class="quiz-set-status" id="quiz-set-status"></div>
+          <div class="quiz-set-list" id="quiz-set-list"></div>
+        </div>
+
+        <div class="quiz-set-progress" id="quiz-set-progress" style="display:none;">
+          <span id="quiz-set-progress-text"></span>
+          <button class="quiz-set-exit-btn" id="quiz-set-exit">Exit quiz</button>
+        </div>
+
+        <div class="quiz-card">
+          <div class="quiz-stem" id="quiz-stem"></div>
+          <div class="quiz-struct" id="quiz-struct"></div>
+          <div class="quiz-options" id="quiz-options"></div>
+          <div class="quiz-footer">
+            <div class="quiz-feedback" id="quiz-feedback"></div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn ghost" id="quiz-add-bank" disabled>Add to bank</button>
+              <button class="btn" id="quiz-next">New question →</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="quiz-card" id="quiz-summary-card" style="display:none;">
+          <div class="quiz-summary-score" id="quiz-summary-score"></div>
+          <div class="quiz-summary-breakdown" id="quiz-summary-breakdown"></div>
+          <div class="quiz-footer" style="justify-content:flex-end;">
+            <button class="btn" id="quiz-summary-done">Back to quiz setup</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="bank-panel" style="display:none;">
+        <div class="bank-panel-card">
+          <div class="bank-panel-head">
+            <h2>Your question bank</h2>
+            <button class="btn ghost" id="clear-bank">Clear all</button>
+          </div>
+          <div class="bank-panel-body">
+            <div id="bank-rows"></div>
+            <div id="bank-empty" style="display:none; color:var(--ink-soft); font-size:13px; padding:20px 0;">
+              Nothing saved yet — browse or quiz, then "Add to bank."
+            </div>
+            <textarea id="export-box" readonly></textarea>
+          </div>
+          <div class="bank-panel-foot">
+            <button class="btn ghost" id="copy-export">Copy to clipboard</button>
+            <button class="btn" id="download-export">Download .docx</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="drug-modal">
+  <div class="modal drug-modal-box">
+    <div class="modal-head">
+      <h2 id="drug-modal-name"></h2>
+      <button class="modal-close" id="drug-modal-close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="drug-modal-layout">
+        <div class="drug-modal-struct" id="drug-modal-struct"></div>
+        <div class="drug-modal-info">
+          <div class="brand" id="drug-modal-brand"></div>
+          <div class="cls" id="drug-modal-cls"></div>
+          <div class="meta" id="drug-modal-meta"></div>
+          <div id="drug-modal-abnote"></div>
+          <button class="add-btn" id="drug-modal-addbtn"></button>
+        </div>
+      </div>
+      <div class="group-heading" style="margin-top:18px;"><span>All matched groups — click to highlight</span></div>
+      <div class="tags" id="drug-modal-tags" style="margin-top:6px;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = __DATA_JSON__;
+const SVGS = __SVGS_JSON__;
+const DRUGS = DATA.drugs;
+const [CW, CH] = DATA.canvas;
+
+// ---------------------------------------------------------------------------
+// Minimal dependency-free .docx (OOXML) writer, used by the quiz-set export.
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Minimal, dependency-free ZIP + DOCX (OOXML) writer.
+// Uses the ZIP "stored" (uncompressed) method so no deflate implementation
+// is needed — keeps this fully self-contained with zero external libraries.
+// ---------------------------------------------------------------------------
+
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+function crc32(bytes) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+function strToBytes(str) {
+  return new TextEncoder().encode(str);
+}
+
+function writeUint32LE(view, offset, value) { view.setUint32(offset, value, true); }
+function writeUint16LE(view, offset, value) { view.setUint16(offset, value, true); }
+
+// files: [{name: 'word/document.xml', data: Uint8Array}, ...]
+function buildZip(files) {
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+
+  for (const file of files) {
+    const nameBytes = strToBytes(file.name);
+    const data = file.data;
+    const crc = crc32(data);
+
+    const localHeader = new ArrayBuffer(30);
+    const lv = new DataView(localHeader);
+    writeUint32LE(lv, 0, 0x04034b50);
+    writeUint16LE(lv, 4, 20);   // version needed
+    writeUint16LE(lv, 6, 0);    // flags
+    writeUint16LE(lv, 8, 0);    // method = stored
+    writeUint16LE(lv, 10, 0);   // mod time
+    writeUint16LE(lv, 12, 0);   // mod date
+    writeUint32LE(lv, 14, crc);
+    writeUint32LE(lv, 18, data.length); // compressed size
+    writeUint32LE(lv, 22, data.length); // uncompressed size
+    writeUint16LE(lv, 26, nameBytes.length);
+    writeUint16LE(lv, 28, 0);   // extra field length
+
+    localParts.push(new Uint8Array(localHeader), nameBytes, data);
+
+    const centralHeader = new ArrayBuffer(46);
+    const cv = new DataView(centralHeader);
+    writeUint32LE(cv, 0, 0x02014b50);
+    writeUint16LE(cv, 4, 20);   // version made by
+    writeUint16LE(cv, 6, 20);   // version needed
+    writeUint16LE(cv, 8, 0);    // flags
+    writeUint16LE(cv, 10, 0);   // method
+    writeUint16LE(cv, 12, 0);   // mod time
+    writeUint16LE(cv, 14, 0);   // mod date
+    writeUint32LE(cv, 16, crc);
+    writeUint32LE(cv, 20, data.length);
+    writeUint32LE(cv, 24, data.length);
+    writeUint16LE(cv, 28, nameBytes.length);
+    writeUint16LE(cv, 30, 0);   // extra length
+    writeUint16LE(cv, 32, 0);   // comment length
+    writeUint16LE(cv, 34, 0);   // disk number start
+    writeUint16LE(cv, 36, 0);   // internal attrs
+    writeUint32LE(cv, 38, 0);   // external attrs
+    writeUint32LE(cv, 42, offset); // local header offset
+
+    centralParts.push(new Uint8Array(centralHeader), nameBytes);
+
+    offset += localHeader.byteLength + nameBytes.length + data.length;
+  }
+
+  const centralStart = offset;
+  let centralSize = 0;
+  for (const p of centralParts) centralSize += p.length;
+
+  const eocd = new ArrayBuffer(22);
+  const ev = new DataView(eocd);
+  writeUint32LE(ev, 0, 0x06054b50);
+  writeUint16LE(ev, 4, 0);  // disk number
+  writeUint16LE(ev, 6, 0);  // disk with central dir
+  writeUint16LE(ev, 8, files.length);
+  writeUint16LE(ev, 10, files.length);
+  writeUint32LE(ev, 12, centralSize);
+  writeUint32LE(ev, 16, centralStart);
+  writeUint16LE(ev, 20, 0); // comment length
+
+  const allParts = [...localParts, ...centralParts, new Uint8Array(eocd)];
+  let totalLen = 0;
+  for (const p of allParts) totalLen += p.length;
+  const out = new Uint8Array(totalLen);
+  let pos = 0;
+  for (const p of allParts) { out.set(p, pos); pos += p.length; }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Builds the WordprocessingML XML parts of a .docx package.
+// ---------------------------------------------------------------------------
+
+function xmlEscape(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+const EMU_PER_INCH = 914400;
+// image is drawn at IMG_W_IN x IMG_H_IN inches in the document
+const IMG_W_IN = 2.6, IMG_H_IN = 2.0;
+
+function paragraph(runsXml, opts) {
+  opts = opts || {};
+  const pPr = opts.center ? '<w:pPr><w:jc w:val="center"/></w:pPr>' : (opts.spacing ? `<w:pPr><w:spacing w:after="${opts.spacing}"/></w:pPr>` : '');
+  return `<w:p>${pPr}${runsXml}</w:p>`;
+}
+function run(text, opts) {
+  opts = opts || {};
+  const rPr = [];
+  if (opts.bold) rPr.push('<w:b/>');
+  if (opts.italic) rPr.push('<w:i/>');
+  if (opts.size) rPr.push(`<w:sz w:val="${opts.size}"/>`);
+  const rPrXml = rPr.length ? `<w:rPr>${rPr.join('')}</w:rPr>` : '';
+  return `<w:r>${rPrXml}<w:t xml:space="preserve">${xmlEscape(text)}</w:t></w:r>`;
+}
+function pageBreak() {
+  return `<w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
+}
+function imageParagraph(relId, picId) {
+  const cx = Math.round(IMG_W_IN * EMU_PER_INCH);
+  const cy = Math.round(IMG_H_IN * EMU_PER_INCH);
+  const drawing = `<w:drawing>
+    <wp:inline distT="0" distB="0" distL="0" distR="0" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">
+      <wp:extent cx="${cx}" cy="${cy}"/>
+      <wp:docPr id="${picId}" name="Picture${picId}"/>
+      <a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+        <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+          <pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+            <pic:nvPicPr>
+              <pic:cNvPr id="${picId}" name="Picture${picId}"/>
+              <pic:cNvPicPr/>
+            </pic:nvPicPr>
+            <pic:blipFill>
+              <a:blip r:embed="rId${relId}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>
+              <a:stretch><a:fillRect/></a:stretch>
+            </pic:blipFill>
+            <pic:spPr>
+              <a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>
+              <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+            </pic:spPr>
+          </pic:pic>
+        </a:graphicData>
+      </a:graphic>
+    </wp:inline>
+  </w:drawing>`;
+  return `<w:p><w:r>${drawing}</w:r></w:p>`;
+}
+
+// questions: [{stem: str, options: [str,str,str,str], imageRelId: number}]
+// answerLines: [str, ...]
+function buildDocumentXml(title, questions, answerLines) {
+  const letters = ['A', 'B', 'C', 'D'];
+  let body = '';
+  body += paragraph(run(title, { bold: true, size: 32 }), { spacing: 240 });
+  body += paragraph(run(`Name: _______________________________        Date: ______________`), { spacing: 360 });
+
+  questions.forEach((q, i) => {
+    body += paragraph(run(`${i + 1}. ${q.stem}`, { bold: true }), { spacing: 80 });
+    body += imageParagraph(q.imageRelId, i + 1);
+    q.options.forEach((opt, j) => {
+      body += paragraph(run(`   ${letters[j]}. ${opt}`), { spacing: 40 });
+    });
+    body += paragraph('', { spacing: 200 });
+  });
+
+  body += pageBreak();
+  body += paragraph(run('Answer Key', { bold: true, size: 32 }), { spacing: 240 });
+  answerLines.forEach(line => {
+    body += paragraph(run(line), { spacing: 80 });
+  });
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    ${body}
+    <w:sectPr>
+      <w:pgSz w:w="12240" w:h="15840"/>
+      <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/>
+    </w:sectPr>
+  </w:body>
+</w:document>`;
+}
+
+function buildContentTypesXml(imageCount) {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Default Extension="png" ContentType="image/png"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>`;
+}
+
+function buildRootRelsXml() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+}
+
+function buildDocumentRelsXml(imageCount) {
+  let rels = '';
+  for (let i = 1; i <= imageCount; i++) {
+    rels += `<Relationship Id="rId${i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image${i}.png"/>`;
+  }
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  ${rels}
+</Relationships>`;
+}
+
+
+// ---- confusable groupings for quiz distractors ----
+const CONFUSE_GROUPS = [
+  ["Pyridine","Pyrimidine","Pyrazine","Pyridazine"],
+  ["Piperidine","Piperazine","Morpholine","Pyrrolidine"],
+  ["Pyrrole","Imidazole","Pyrazole","1,2,4-Triazole","1,2,3-Triazole","Tetrazole"],
+  ["Oxazole","Isoxazole","Thiazole","Isothiazole","Furan","Thiophene"],
+  ["Indole","Benzimidazole","Benzothiazole","Benzoxazole","Benzofuran","Benzothiophene"],
+  ["Quinoline","Isoquinoline","Quinazoline","Purine (xanthine/guanine core)"],
+  ["Carboxylic acid","Ester","Amide","Carbamate","Urea","Imide"],
+  ["Sulfonamide","Sulfonylurea","Sulfoxide","Sulfide","Thioester"],
+  ["Nitrile","Nitro group","Guanidine","Hydrazide/hydrazine"],
+  ["Ether","Phenol","Ketone","Aromatic halide"],
+  ["beta-Lactam","Hydantoin","Oxazolidinone","Benzodiazepine (7-membered N,N)"],
+];
+function confusablesFor(label){
+  for(const g of CONFUSE_GROUPS){ if(g.includes(label)) return g.filter(x=>x!==label); }
+  return [];
+}
+const ALL_LABELS = [...new Set(DRUGS.flatMap(d=>d.matches.map(m=>m.label)))];
+
+// ---- build category index ----
+const catIndex = {}; // label -> {category, count, acidBase, pka}
+DRUGS.forEach(d=>{
+  d.matches.forEach(m=>{
+    if(!catIndex[m.label]) catIndex[m.label] = {category:m.category, count:0, acidBase:m.acidBase, pka:m.pka};
+    catIndex[m.label].count++;
+  });
+});
+const heteroLabels = Object.keys(catIndex).filter(l=>catIndex[l].category==="Heterocycle").sort((a,b)=>catIndex[b].count-catIndex[a].count);
+const fgLabels = Object.keys(catIndex).filter(l=>catIndex[l].category==="Functional group").sort((a,b)=>catIndex[b].count-catIndex[a].count);
+
+let activeFilter = null; // label string or null
+let bank = []; // list of {type:'browse'|'quiz', name, brand, cls, label, formula, mw, smiles, options?, correct?}
+
+// ---------- Sidebar rendering ----------
+function renderCatLists(filterText=""){
+  const ft = filterText.trim().toLowerCase();
+  const box = document.getElementById('cat-lists');
+  function dot(label){
+    const ab = catIndex[label].acidBase;
+    if(ab==='acidic') return `<span class="ab-dot acidic" title="Acidic — ${escAttr(catIndex[label].pka)}"></span>`;
+    if(ab==='basic') return `<span class="ab-dot basic" title="Basic — ${escAttr(catIndex[label].pka)}"></span>`;
+    return `<span class="ab-dot neutral" title="Neutral / non-ionizable"></span>`;
+  }
+  function section(title, labels){
+    const items = labels.filter(l=>l.toLowerCase().includes(ft));
+    if(ft && items.length===0) return "";
+    let html = `<div class="group-heading"><span>${title}</span><span>${items.length}</span></div><ul class="cat-list">`;
+    items.forEach(l=>{
+      const active = activeFilter===l ? "active":"";
+      html += `<li class="cat-item ${active}" data-label="${escAttr(l)}"><span class="left">${dot(l)}<span>${l}</span></span><span class="cnt">${catIndex[l].count}</span></li>`;
+    });
+    return html + "</ul>";
+  }
+  box.innerHTML = section("Heterocycles", heteroLabels) + section("Functional groups", fgLabels);
+  box.querySelectorAll('.cat-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const label = el.getAttribute('data-label');
+      activeFilter = (activeFilter===label) ? null : label;
+      renderCatLists(document.getElementById('cat-search').value);
+      renderGrid();
+      document.getElementById('sidebar-collapsible').classList.remove('open');
+      if(window.innerWidth <= 820) window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+}
+document.getElementById('cat-search').addEventListener('input', e=>renderCatLists(e.target.value));
+document.getElementById('clear-filter').addEventListener('click', ()=>{ activeFilter=null; renderCatLists(document.getElementById('cat-search').value); renderGrid(); });
+document.getElementById('banner-clear-filter').addEventListener('click', ()=>{ activeFilter=null; renderCatLists(document.getElementById('cat-search').value); renderGrid(); });
+document.getElementById('sidebar-toggle').addEventListener('click', ()=>{
+  document.getElementById('sidebar-collapsible').classList.toggle('open');
+});
+
+function escAttr(s){ return s.replace(/"/g,'&quot;'); }
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ---------- Grid rendering ----------
+function matchingDrugs(){
+  const q = document.getElementById('drug-search').value.trim().toLowerCase();
+  return DRUGS.filter(d=>{
+    if(activeFilter && !d.matches.some(m=>m.label===activeFilter)) return false;
+    if(q){
+      const hay = (d.name+" "+d.brand+" "+d.class).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function structSvgWithBox(d, label){
+  const svg = SVGS[d.slug];
+  let boxHtml = "";
+  if(label){
+    const m = d.matches.find(x=>x.label===label);
+    if(m){
+      boxHtml = m.boxes.map(box=>{
+        const [x0,y0,x1,y1] = box;
+        const left = (x0/CW*100).toFixed(2), top=(y0/CH*100).toFixed(2);
+        const w = ((x1-x0)/CW*100).toFixed(2), h=((y1-y0)/CH*100).toFixed(2);
+        return `<div class="hl-box" style="left:${left}%; top:${top}%; width:${w}%; height:${h}%;"></div>`;
+      }).join("");
+    }
+  }
+  return `<div class="struct-wrap">${svg}${boxHtml}</div>`;
+}
+
+function structSvgWithStereoDots(d, showDots){
+  const svg = SVGS[d.slug];
+  let dotsHtml = "";
+  if(showDots){
+    dotsHtml = d.stereocenters.map(pt=>{
+      const left = (pt.x/CW*100).toFixed(2), top = (pt.y/CH*100).toFixed(2);
+      const label = pt.chirality === '?' ? '' : pt.chirality;
+      return `<div class="stereo-dot" style="left:${left}%; top:${top}%;" title="${escAttr(pt.chirality==='?' ? 'stereocenter (unassigned)' : pt.chirality)}">${label}</div>`;
+    }).join("");
+  }
+  return `<div class="struct-wrap">${svg}${dotsHtml}</div>`;
+}
+
+function structSvgWithHBondDots(d, showDots, property){
+  const svg = SVGS[d.slug];
+  let dotsHtml = "";
+  if(showDots){
+    const atoms = property === 'hba' ? d.hbaAtoms : d.hbdAtoms;
+    const cls = property === 'hba' ? 'hbond-dot acceptor' : 'hbond-dot';
+    const label = property === 'hba' ? 'H-bond acceptor' : 'H-bond donor';
+    dotsHtml = atoms.map(pt=>{
+      const left = (pt.x/CW*100).toFixed(2), top = (pt.y/CH*100).toFixed(2);
+      return `<div class="${cls}" style="left:${left}%; top:${top}%;" title="${label}"></div>`;
+    }).join("");
+  }
+  return `<div class="struct-wrap">${svg}${dotsHtml}</div>`;
+}
+
+// letterData entries are always visible (they ARE the answer choices, not a
+// post-answer reveal). After answering, pass chosenLetter to recolor: the
+// correct dot turns green, everything else turns dimmed red.
+function structSvgWithLetterDots(d, letterData, chosenLetter){
+  const svg = SVGS[d.slug];
+  const dotsHtml = letterData.map(c=>{
+    const left = (c.x/CW*100).toFixed(2), top = (c.y/CH*100).toFixed(2);
+    let cls = 'letter-dot';
+    if(chosenLetter){
+      cls += c.correct ? ' correct-reveal' : ' wrong-reveal';
+    }
+    return `<div class="${cls}" style="left:${left}%; top:${top}%;" title="${escAttr(c.label)}">${c.letter}</div>`;
+  }).join("");
+  return `<div class="struct-wrap">${svg}${dotsHtml}</div>`;
+}
+
+function isInBank(name,label){
+  return bank.some(b=>b.name===name && b.label===label);
+}
+
+function renderGrid(){
+  const banner = document.getElementById('filter-banner');
+  if(activeFilter){
+    banner.classList.add('show');
+    document.getElementById('filter-name').textContent = activeFilter;
+    const ab = catIndex[activeFilter].acidBase;
+    const abLabel = ab==='acidic' ? 'Acidic' : ab==='basic' ? 'Basic' : 'Neutral / non-ionizable';
+    document.getElementById('filter-smarts').textContent = catIndex[activeFilter].category + " • " + catIndex[activeFilter].count + " drugs in this set • " + abLabel + " (" + catIndex[activeFilter].pka + ")";
+  } else {
+    banner.classList.remove('show');
+  }
+  const list = matchingDrugs();
+  document.getElementById('result-count').textContent = list.length + (list.length===1 ? " drug" : " drugs");
+  const grid = document.getElementById('grid');
+  if(list.length===0){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="glyph">🔎</div>No drugs match. Try a different group or search term.</div>`;
+    return;
+  }
+  grid.innerHTML = list.map(d=>{
+    const label = activeFilter || (d.matches[0] && d.matches[0].label);
+    const shownMatch = d.matches.find(m=>m.label===label);
+    const tagsHtml = d.matches.slice(0,6).map(m=>{
+      const cls = m.category==="Functional group" ? "fg" : "";
+      const cur = (m.label===activeFilter) ? "current":"";
+      const abCls = m.acidBase==='acidic' ? 'ab-acidic' : m.acidBase==='basic' ? 'ab-basic' : '';
+      return `<span class="tag ${cls} ${cur} ${abCls}" data-label="${escAttr(m.label)}" title="${escAttr(m.acidBase)} — ${escAttr(m.pka)}">${m.label}</span>`;
+    }).join("");
+    const added = isInBank(d.name, label);
+    const abNote = shownMatch ? `<div class="ab-note ${shownMatch.acidBase}">${shownMatch.acidBase==='neutral'?'Neutral':shownMatch.acidBase.charAt(0).toUpperCase()+shownMatch.acidBase.slice(1)} — ${escHtml(shownMatch.pka)}</div>` : "";
+    return `<div class="card" data-name="${escAttr(d.name)}" data-shown-label="${escAttr(label||'')}">
+      ${structSvgWithBox(d, label)}
+      <div class="body">
+        <div class="name">${escHtml(d.name)}</div>
+        <div class="brand">${escHtml(d.brand)}</div>
+        <div class="cls">${escHtml(d.class)}</div>
+        <div class="meta">${d.formula} · MW ${d.mw} · LogP ${d.logp} · HBD ${d.hbd} · HBA ${d.hba}</div>
+        ${abNote}
+        <div class="tags">${tagsHtml}</div>
+        <button class="add-btn ${added?'added':''}" data-name="${escAttr(d.name)}" data-label="${escAttr(label||'')}">${added?'✓ Added':'+ Add to bank'}</button>
+      </div>
+    </div>`;
+  }).join("");
+
+  grid.querySelectorAll('.tag').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      activeFilter = el.getAttribute('data-label');
+      renderCatLists(document.getElementById('cat-search').value);
+      renderGrid();
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+  grid.querySelectorAll('.add-btn').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const name = el.getAttribute('data-name');
+      const label = el.getAttribute('data-label');
+      const d = DRUGS.find(x=>x.name===name);
+      if(isInBank(name,label)){
+        bank = bank.filter(b=>!(b.name===name && b.label===label));
+      } else {
+        bank.push({type:'browse', name:d.name, brand:d.brand, cls:d.class, label, formula:d.formula, mw:d.mw, smiles:d.smiles});
+      }
+      updateBankCount();
+      renderGrid();
+    });
+  });
+  grid.querySelectorAll('.card').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      openDrugModal(el.getAttribute('data-name'), el.getAttribute('data-shown-label'));
+    });
+  });
+}
+document.getElementById('drug-search').addEventListener('input', ()=>{
+  document.getElementById('drug-search-clear').style.display = document.getElementById('drug-search').value ? '' : 'none';
+  renderGrid();
+});
+document.getElementById('drug-search-clear').addEventListener('click', ()=>{
+  const input = document.getElementById('drug-search');
+  input.value = '';
+  document.getElementById('drug-search-clear').style.display = 'none';
+  renderGrid();
+  input.focus();
+});
+
+// ---------- Drug detail modal (expanded card view) ----------
+let modalDrug = null;
+let modalActiveLabel = null;
+
+function openDrugModal(name, shownLabel){
+  const d = DRUGS.find(x=>x.name===name);
+  if(!d) return;
+  modalDrug = d;
+  modalActiveLabel = shownLabel || (d.matches[0] && d.matches[0].label) || null;
+  renderDrugModal();
+  document.getElementById('drug-modal').classList.add('show');
+}
+
+function renderDrugModal(){
+  const d = modalDrug;
+  if(!d) return;
+  const label = modalActiveLabel;
+  const shownMatch = d.matches.find(m=>m.label===label);
+
+  document.getElementById('drug-modal-name').textContent = d.name;
+  document.getElementById('drug-modal-brand').textContent = d.brand;
+  document.getElementById('drug-modal-cls').textContent = d.class;
+  document.getElementById('drug-modal-meta').textContent = `${d.formula} · MW ${d.mw} · LogP ${d.logp} · HBD ${d.hbd} · HBA ${d.hba}`;
+  document.getElementById('drug-modal-struct').innerHTML = structSvgWithBox(d, label);
+
+  document.getElementById('drug-modal-abnote').innerHTML = shownMatch
+    ? `<div class="ab-note ${shownMatch.acidBase}">${shownMatch.acidBase==='neutral'?'Neutral':shownMatch.acidBase.charAt(0).toUpperCase()+shownMatch.acidBase.slice(1)} — ${escHtml(shownMatch.pka)}</div>`
+    : "";
+
+  const addBtn = document.getElementById('drug-modal-addbtn');
+  const added = isInBank(d.name, label);
+  addBtn.textContent = added ? '✓ Added to bank' : '+ Add to bank';
+  addBtn.className = 'add-btn' + (added ? ' added' : '');
+  addBtn.onclick = ()=>{
+    if(isInBank(d.name, label)){
+      bank = bank.filter(b=>!(b.name===d.name && b.label===label));
+    } else {
+      bank.push({type:'browse', name:d.name, brand:d.brand, cls:d.class, label, formula:d.formula, mw:d.mw, smiles:d.smiles});
+    }
+    updateBankCount();
+    renderDrugModal();
+    renderGrid();
+  };
+
+  const tagsBox = document.getElementById('drug-modal-tags');
+  tagsBox.innerHTML = d.matches.map(m=>{
+    const cls = m.category==="Functional group" ? "fg" : "";
+    const cur = (m.label===label) ? "current":"";
+    const abCls = m.acidBase==='acidic' ? 'ab-acidic' : m.acidBase==='basic' ? 'ab-basic' : '';
+    return `<span class="tag ${cls} ${cur} ${abCls}" data-label="${escAttr(m.label)}" title="${escAttr(m.acidBase)} — ${escAttr(m.pka)}">${m.label}</span>`;
+  }).join("");
+  tagsBox.querySelectorAll('.tag').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      modalActiveLabel = el.getAttribute('data-label');
+      renderDrugModal();
+    });
+  });
+}
+
+function closeDrugModal(){
+  document.getElementById('drug-modal').classList.remove('show');
+}
+document.getElementById('drug-modal-close').addEventListener('click', closeDrugModal);
+document.getElementById('drug-modal').addEventListener('click', (e)=>{ if(e.target.id==='drug-modal') closeDrugModal(); });
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeDrugModal(); });
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.getAttribute('data-tab');
+    document.getElementById('browse-panel').style.display = tab==='browse' ? '' : 'none';
+    document.getElementById('browse-search-row').style.display = tab==='browse' ? '' : 'none';
+    document.getElementById('quiz-panel').style.display = tab==='quiz' ? '' : 'none';
+    document.getElementById('bank-panel').style.display = tab==='bank' ? '' : 'none';
+    if(tab==='quiz' && !currentQuiz) newQuizQuestion();
+    if(tab==='bank') renderBankPanel();
+  });
+});
+
+// ---------- Quiz ----------
+let currentQuiz = null;
+let selectedCategories = new Set(['Heterocycle','Functional group','acidbase','hbond','stereo','ro5','degree','basicn','locate']); // all on by default
+let quizSet = []; // batch-generated questions, populated by generateQuizSet()
+let takingQuizSet = false;
+let quizSetIndex = 0;
+let quizSetResults = []; // {category, correct} per answered question, only while takingQuizSet
+
+// maps a question's type to the human-readable category used in the results breakdown
+function categoryForQuestion(q){
+  if(q.type === 'identify' || q.type === 'locate') return catIndex[q.correct] ? catIndex[q.correct].category : 'Identify the group';
+  if(q.type === 'acidbase') return 'Acid / Base';
+  if(q.type === 'hbond') return 'H-Bond Count';
+  if(q.type === 'stereo') return 'Stereocenters';
+  if(q.type === 'ro5') return 'Rule of 5';
+  if(q.type === 'degree') return 'Degree of Substitution';
+  if(q.type === 'basicn') return 'Most Basic Nitrogen';
+  return q.type;
+}
+
+document.getElementById('quiz-mode-toggle').querySelectorAll('.mode-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const cat = btn.getAttribute('data-cat');
+    if(selectedCategories.has(cat)){
+      if(selectedCategories.size === 1) return; // keep at least one category selected
+      selectedCategories.delete(cat);
+      btn.classList.remove('active');
+    } else {
+      selectedCategories.add(cat);
+      btn.classList.add('active');
+    }
+    newQuizQuestion();
+  });
+});
+
+function numericDistractors(correct, count){
+  const pool = new Set();
+  let radius = 1;
+  while(pool.size < count && radius < 20){
+    if(correct - radius >= 0) pool.add(correct - radius);
+    if(pool.size < count) pool.add(correct + radius);
+    radius++;
+  }
+  return shuffle([...pool]).slice(0, count);
+}
+
+function showEmptyQuiz(msg){
+  currentQuiz = null;
+  document.getElementById('quiz-stem').innerHTML = `<b>No eligible questions</b>`;
+  document.getElementById('quiz-struct').innerHTML = `<div class="empty-state">${msg}</div>`;
+  document.getElementById('quiz-options').innerHTML = "";
+  document.getElementById('quiz-feedback').textContent = "";
+  document.getElementById('quiz-add-bank').disabled = true;
+}
+
+// ---- candidate pools: build a list of "recipes", one per possible question ----
+const RO5_CRITERIA = {
+  mw: 'Molecular weight (> 500)',
+  logp: 'LogP (> 5)',
+  hbd: 'H-bond donors (> 5)',
+  hba: 'H-bond acceptors (> 10)',
+  none: 'Passes all four — no violations',
+};
+function ro5Violations(d){
+  const v = [];
+  if(d.mw > 500) v.push('mw');
+  if(d.logp > 5) v.push('logp');
+  if(d.hbd > 5) v.push('hbd');
+  if(d.hba > 10) v.push('hba');
+  return v;
+}
+
+function buildCandidatePool(kind){
+  if(kind === 'acidbase'){
+    return DRUGS.flatMap(d => d.matches.map(m => ({kind:'acidbase', d, m})));
+  }
+  if(kind === 'hbond'){
+    return DRUGS.flatMap(d => [{kind:'hbond', d, property:'hbd'}, {kind:'hbond', d, property:'hba'}]);
+  }
+  if(kind === 'stereo'){
+    return DRUGS.filter(d => d.stereocenters.length <= 10).map(d => ({kind:'stereo', d}));
+  }
+  if(kind === 'ro5'){
+    // only pool drugs with 0 or exactly 1 violation — 2+ violations has no single
+    // unambiguous "correct" answer for a multiple-choice question
+    return DRUGS.filter(d => ro5Violations(d).length <= 1).map(d => ({kind:'ro5', d}));
+  }
+  if(kind === 'degree'){
+    const DEGREE_LABELS = ['Primary amine','Secondary amine','Tertiary amine','Primary alcohol','Secondary alcohol','Tertiary alcohol'];
+    return DRUGS.flatMap(d => d.matches
+      .filter(m => DEGREE_LABELS.includes(m.label))
+      .map(m => ({kind:'degree', d, m})));
+  }
+  if(kind === 'basicn'){
+    return DRUGS.filter(d => d.basicNOptions).map(d => ({kind:'basicn', d}));
+  }
+  if(kind === 'locate'){
+    // no confusables/distractors needed here -- it's a click interaction, not
+    // multiple choice, so any matched heterocycle or functional group qualifies
+    return DRUGS.flatMap(d => d.matches
+      .filter(m => m.category === 'Heterocycle' || m.category === 'Functional group')
+      .map(m => ({kind:'locate', d, m})));
+  }
+  // kind is 'Heterocycle' or 'Functional group' — the two "identify the group" categories
+  return DRUGS.flatMap(d => d.matches
+    .filter(m => m.category === kind && confusablesFor(m.label).length >= 3)
+    .map(m => ({kind:'identify', d, m})));
+}
+function buildCandidatePoolForCurrentMode(){
+  let pool = [];
+  selectedCategories.forEach(cat => { pool = pool.concat(buildCandidatePool(cat)); });
+  return pool;
+}
+
+function questionFromRecipe(recipe){
+  if(recipe.kind === 'identify'){
+    const distractors = shuffle(confusablesFor(recipe.m.label)).slice(0,3);
+    const options = shuffle([recipe.m.label, ...distractors]);
+    return {type:'identify', drug:recipe.d, correct:recipe.m.label, options, highlightLabel:recipe.m.label};
+  }
+  if(recipe.kind === 'acidbase'){
+    const options = shuffle(['acidic','basic','neutral']);
+    return {type:'acidbase', drug:recipe.d, correct:recipe.m.acidBase, options, groupLabel:recipe.m.label, pka:recipe.m.pka, highlightLabel:recipe.m.label};
+  }
+  if(recipe.kind === 'hbond'){
+    const correctVal = recipe.d[recipe.property];
+    const distractors = numericDistractors(correctVal, 3);
+    const options = shuffle([correctVal, ...distractors]).map(String);
+    return {type:'hbond', drug:recipe.d, correct:String(correctVal), options, property:recipe.property, highlightLabel:null};
+  }
+  if(recipe.kind === 'stereo'){
+    const correctVal = recipe.d.stereocenters.length;
+    const distractors = numericDistractors(correctVal, 3);
+    const options = shuffle([correctVal, ...distractors]).map(String);
+    return {type:'stereo', drug:recipe.d, correct:String(correctVal), options, highlightLabel:null};
+  }
+  if(recipe.kind === 'ro5'){
+    const violations = ro5Violations(recipe.d);
+    const correctKey = violations.length === 1 ? violations[0] : 'none';
+    const otherKeys = Object.keys(RO5_CRITERIA).filter(k => k !== correctKey);
+    const distractorKeys = shuffle(otherKeys).slice(0,3);
+    const options = shuffle([correctKey, ...distractorKeys]);
+    return {type:'ro5', drug:recipe.d, correct:correctKey, options, highlightLabel:null};
+  }
+  if(recipe.kind === 'degree'){
+    const [degree, groupType] = recipe.m.label.split(' '); // e.g. "Primary" "amine"
+    const options = shuffle(['Primary','Secondary','Tertiary']);
+    return {type:'degree', drug:recipe.d, correct:degree, options, groupType, groupLabel:recipe.m.label, pka:recipe.m.pka, highlightLabel:recipe.m.label};
+  }
+  if(recipe.kind === 'basicn'){
+    const letters = ['A','B','C','D'];
+    const shuffled = shuffle(recipe.d.basicNOptions);
+    const letterData = shuffled.map((c,i) => ({...c, letter: letters[i]}));
+    const correctLetter = letterData.find(c => c.correct).letter;
+    return {type:'basicn', drug:recipe.d, correct:correctLetter, options:letterData.map(c=>c.letter), letterData, highlightLabel:null};
+  }
+  if(recipe.kind === 'locate'){
+    return {type:'locate', drug:recipe.d, correct:recipe.m.label, boxes:recipe.m.boxes, options:[], highlightLabel:null};
+  }
+}
+
+function newQuizQuestion(){
+  const pool = buildCandidatePoolForCurrentMode();
+  if(pool.length === 0) return showEmptyQuiz('No eligible questions for this selection — try including another category.');
+  currentQuiz = questionFromRecipe(pool[Math.floor(Math.random()*pool.length)]);
+  renderQuiz();
+}
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function abDisplayLabel(v){ return v==='acidic'?'Acidic':v==='basic'?'Basic':'Neutral'; }
+
+function attachLocateClickHandler(){
+  const wrap = document.querySelector('#quiz-struct .struct-wrap');
+  if(!wrap) return;
+  wrap.style.cursor = 'crosshair';
+  const handler = (e) => {
+    wrap.removeEventListener('click', handler);
+    const rect = wrap.getBoundingClientRect();
+    const clickX = ((e.clientX - rect.left) / rect.width) * CW;
+    const clickY = ((e.clientY - rect.top) / rect.height) * CH;
+    const isRight = currentQuiz.boxes.some(box => {
+      const [x0,y0,x1,y1] = box;
+      return clickX >= x0 && clickX <= x1 && clickY >= y0 && clickY <= y1;
+    });
+
+    if(takingQuizSet){
+      quizSetResults.push({category: categoryForQuestion(currentQuiz), correct: isRight});
+    }
+
+    const boxHtml = currentQuiz.boxes.map(box=>{
+      const [x0,y0,x1,y1] = box;
+      const left = (x0/CW*100).toFixed(2), top=(y0/CH*100).toFixed(2);
+      const w = ((x1-x0)/CW*100).toFixed(2), h=((y1-y0)/CH*100).toFixed(2);
+      return `<div class="hl-box" style="left:${left}%; top:${top}%; width:${w}%; height:${h}%;"></div>`;
+    }).join("");
+    const markerLeft = (clickX/CW*100).toFixed(2), markerTop = (clickY/CH*100).toFixed(2);
+    const markerCls = isRight ? 'click-marker correct-reveal' : 'click-marker wrong-reveal';
+    const markerHtml = `<div class="${markerCls}" style="left:${markerLeft}%; top:${markerTop}%;"></div>`;
+    document.getElementById('quiz-struct').innerHTML = `<div class="struct-wrap">${SVGS[currentQuiz.drug.slug]}${boxHtml}${markerHtml}</div>`;
+
+    document.getElementById('quiz-feedback').textContent = isRight
+      ? `Correct — your click landed inside the ${currentQuiz.correct} region.`
+      : `Not quite — the ${currentQuiz.correct} is boxed above; your click is marked in red.`;
+    document.getElementById('quiz-options').innerHTML = '';
+    document.getElementById('quiz-add-bank').disabled = false;
+  };
+  wrap.addEventListener('click', handler);
+}
+
+function renderQuiz(){
+  const {type, drug, correct, options} = currentQuiz;
+  document.getElementById('quiz-next').textContent = takingQuizSet
+    ? (quizSetIndex + 1 >= quizSet.length ? 'Finish quiz →' : 'Next question →')
+    : 'New question →';
+  const stem = document.getElementById('quiz-stem');
+  if(type==='identify'){
+    stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>Identify the highlighted group.</b>`;
+  } else if(type==='acidbase'){
+    stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>Is the highlighted group acidic, basic, or neutral (non-ionizable)?</b>`;
+  } else if(type==='hbond'){
+    const propName = currentQuiz.property==='hbd' ? 'hydrogen bond donors' : 'hydrogen bond acceptors';
+    stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>How many ${propName} does this molecule have?</b>`;
+  } else if(type==='stereo'){
+    stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>How many stereocenters does this molecule have?</b>`;
+  } else if(type==='ro5'){
+    stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>Does this molecule violate Lipinski's Rule of Five? If so, which criterion?</b>`;
+  } else if(type==='degree'){
+    stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>Is the highlighted ${currentQuiz.groupType} primary, secondary, or tertiary?</b>`;
+  } else if(type==='basicn'){
+    stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>Which marked nitrogen is most basic?</b>`;
+  } else if(type==='locate'){
+    stem.innerHTML = `<b>${escHtml(drug.name)}</b> (${escHtml(drug.brand)}) — ${escHtml(drug.class.split(" (")[0])}.<br><b>Click on the ${escHtml(correct)} in this structure.</b>`;
+  }
+  document.getElementById('quiz-struct').innerHTML = type==='stereo'
+    ? structSvgWithStereoDots(drug, false)
+    : type==='basicn'
+    ? structSvgWithLetterDots(drug, currentQuiz.letterData, null)
+    : type==='locate'
+    ? structSvgWithBox(drug, null)
+    : structSvgWithBox(drug, currentQuiz.highlightLabel);
+  const optBox = document.getElementById('quiz-options');
+  const letters = ["A","B","C","D"];
+  const displayText = (o) => type==='acidbase' ? abDisplayLabel(o) : type==='ro5' ? RO5_CRITERIA[o] : o;
+  if(type==='locate'){
+    optBox.innerHTML = '<div class="locate-hint">Click directly on the structure above.</div>';
+    document.getElementById('quiz-feedback').textContent = "";
+    document.getElementById('quiz-add-bank').disabled = true;
+    attachLocateClickHandler();
+    return;
+  }
+  optBox.innerHTML = type==='basicn'
+    ? options.map(o=>`<button class="opt-btn" data-opt="${escAttr(o)}"><span class="letter">${o}</span>Nitrogen ${o}</button>`).join("")
+    : options.map((o,i)=>`<button class="opt-btn" data-opt="${escAttr(o)}"><span class="letter">${letters[i]}</span>${escHtml(displayText(o))}</button>`).join("");
+  document.getElementById('quiz-feedback').textContent = "";
+  document.getElementById('quiz-add-bank').disabled = true;
+  optBox.querySelectorAll('.opt-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      optBox.querySelectorAll('.opt-btn').forEach(b=>b.disabled=true);
+      const chosen = btn.getAttribute('data-opt');
+      optBox.querySelectorAll('.opt-btn').forEach(b=>{
+        const val = b.getAttribute('data-opt');
+        if(val===correct) b.classList.add('correct');
+        else if(val===chosen) b.classList.add('wrong');
+      });
+      const isRight = chosen===correct;
+      if(takingQuizSet){
+        quizSetResults.push({category: categoryForQuestion(currentQuiz), correct: isRight});
+      }
+      let feedback = "";
+      if(type==='identify'){
+        feedback = isRight
+          ? `Correct — ${drug.name} contains a ${correct.toLowerCase()}.`
+          : `Not quite. The highlighted group is ${correct}.`;
+      } else if(type==='acidbase'){
+        const desc = `${currentQuiz.groupLabel} → ${abDisplayLabel(correct).toLowerCase()} (${currentQuiz.pka})`;
+        feedback = isRight ? `Correct — ${desc}.` : `Not quite — ${desc}.`;
+      } else if(type==='hbond'){
+        const propName = currentQuiz.property==='hbd' ? 'H-bond donors' : 'H-bond acceptors';
+        document.getElementById('quiz-struct').innerHTML = structSvgWithHBondDots(drug, true, currentQuiz.property);
+        feedback = isRight
+          ? `Correct — ${drug.name} has ${correct} ${propName} (marked above).`
+          : `Not quite — ${drug.name} has ${correct} ${propName} (marked above).`;
+      } else if(type==='stereo'){
+        document.getElementById('quiz-struct').innerHTML = structSvgWithStereoDots(drug, true);
+        feedback = isRight
+          ? `Correct — ${drug.name} has ${correct} stereocenter${correct==='1'?'':'s'} (marked above).`
+          : `Not quite — ${drug.name} has ${correct} stereocenter${correct==='1'?'':'s'} (marked above).`;
+      } else if(type==='ro5'){
+        const stats = `MW ${drug.mw}, LogP ${drug.logp}, HBD ${drug.hbd}, HBA ${drug.hba}`;
+        feedback = isRight
+          ? `Correct — ${RO5_CRITERIA[correct]}. (${stats})`
+          : `Not quite — ${RO5_CRITERIA[correct]}. (${stats})`;
+      } else if(type==='degree'){
+        feedback = isRight
+          ? `Correct — ${currentQuiz.groupLabel}. ${currentQuiz.pka}`
+          : `Not quite — this is a ${currentQuiz.groupLabel.toLowerCase()}. ${currentQuiz.pka}`;
+      } else if(type==='basicn'){
+        document.getElementById('quiz-struct').innerHTML = structSvgWithLetterDots(drug, currentQuiz.letterData, chosen);
+        const correctInfo = currentQuiz.letterData.find(c => c.correct);
+        feedback = isRight
+          ? `Correct — Nitrogen ${correct}: ${correctInfo.label}`
+          : `Not quite — Nitrogen ${correct} is most basic: ${correctInfo.label}`;
+      }
+      document.getElementById('quiz-feedback').textContent = feedback;
+      document.getElementById('quiz-add-bank').disabled = false;
+    });
+  });
+}
+document.getElementById('quiz-next').addEventListener('click', () => {
+  if(takingQuizSet){
+    advanceQuizSetTaking();
+  } else {
+    newQuizQuestion();
+  }
+});
+document.getElementById('quiz-set-take').addEventListener('click', startQuizSetTaking);
+document.getElementById('quiz-set-exit').addEventListener('click', exitQuizSetTaking);
+document.getElementById('quiz-summary-done').addEventListener('click', () => {
+  document.getElementById('quiz-summary-card').style.display = 'none';
+  document.querySelector('.quiz-card').style.display = '';
+  setTakingModeUI(false);
+  newQuizQuestion();
+});
+
+// ---------- Quiz set generation (batch) ----------
+function categoryWordFor(label){
+  return (catIndex[label] && catIndex[label].category === 'Functional group') ? 'functional group' : 'heterocycle';
+}
+function stemTextFor(q){
+  if(q.type === 'identify'){
+    return `${q.drug.name} is used as ${q.drug.class.split(" (")[0].toLowerCase()}. Identify the highlighted ${categoryWordFor(q.correct)}.`;
+  }
+  if(q.type === 'acidbase'){
+    return `${q.drug.name} (${q.drug.brand}) — is the highlighted group acidic, basic, or neutral (non-ionizable)?`;
+  }
+  if(q.type === 'hbond'){
+    const propName = q.property === 'hbd' ? 'hydrogen bond donors' : 'hydrogen bond acceptors';
+    return `How many ${propName} does ${q.drug.name} (${q.drug.brand}) have?`;
+  }
+  if(q.type === 'stereo'){
+    return `How many stereocenters does ${q.drug.name} (${q.drug.brand}) have?`;
+  }
+  if(q.type === 'ro5'){
+    return `Does ${q.drug.name} (${q.drug.brand}) violate Lipinski's Rule of Five? If so, which criterion?`;
+  }
+  if(q.type === 'degree'){
+    return `${q.drug.name} is used as ${q.drug.class.split(" (")[0].toLowerCase()}. Is the highlighted ${q.groupType} primary, secondary, or tertiary?`;
+  }
+  if(q.type === 'basicn'){
+    return `Which marked nitrogen in ${q.drug.name} (${q.drug.brand}) is most basic?`;
+  }
+  if(q.type === 'locate'){
+    return `Circle or label the ${q.correct} in ${q.drug.name} (${q.drug.brand})'s structure below.`;
+  }
+}
+function optionTextsFor(q){
+  if(q.type === 'acidbase') return q.options.map(abDisplayLabel);
+  if(q.type === 'ro5') return q.options.map(k => RO5_CRITERIA[k]);
+  if(q.type === 'basicn') return q.options.map(o => `Nitrogen ${o}`);
+  return q.options;
+}
+function answerLineFor(q, n){
+  const letters = ['A','B','C','D'];
+  if(q.type === 'locate'){
+    return `${n}. ${q.correct || q.answerText} (free-response — no lettered choice for this question type)`;
+  }
+  if(q.type === 'acidbase'){
+    const idx = q.options.indexOf(q.correct);
+    return `${n}. ${letters[idx]} — ${abDisplayLabel(q.correct)} (${q.pka})`;
+  }
+  if(q.type === 'ro5'){
+    const idx = q.options.indexOf(q.correct);
+    const stats = `MW ${q.drug.mw}, LogP ${q.drug.logp}, HBD ${q.drug.hbd}, HBA ${q.drug.hba}`;
+    return `${n}. ${letters[idx]} — ${RO5_CRITERIA[q.correct]} (${stats})`;
+  }
+  if(q.type === 'degree'){
+    const idx = q.options.indexOf(q.correct);
+    return `${n}. ${letters[idx]} — ${q.correct} (${q.groupLabel} — ${q.pka})`;
+  }
+  const idx = q.options.map(String).indexOf(String(q.correct));
+  let displayCorrect = q.correct;
+  if(q.type === 'hbond') displayCorrect = `${q.correct} ${q.property==='hbd' ? 'H-bond donors' : 'H-bond acceptors'}`;
+  if(q.type === 'stereo') displayCorrect = `${q.correct} stereocenter${q.correct==='1'?'':'s'}`;
+  if(q.type === 'basicn'){
+    const info = (q.letterData || []).find(c => c.letter === q.correct);
+    displayCorrect = `Nitrogen ${q.correct}` + (info ? ` — ${info.label}` : '');
+  }
+  return `${n}. ${letters[idx]} — ${displayCorrect}`;
+}
+
+// bakes the highlight box directly into the SVG markup (native <rect>) so it
+// survives rasterization to PNG for the exported document
+function svgWithBakedBox(d, label){
+  const svg = SVGS[d.slug];
+  if(!label) return svg;
+  const m = d.matches.find(x => x.label === label);
+  if(!m) return svg;
+  const overlays = m.boxes.map(box => {
+    const [x0,y0,x1,y1] = box;
+    return `<rect x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}" rx="3" fill="rgba(201,144,47,0.15)" stroke="#c9902f" stroke-width="2.5" stroke-dasharray="5,3"/>`;
+  }).join("");
+  return svg.replace('</svg>', overlays + '</svg>');
+}
+
+function svgWithBakedLetterDots(d, letterData){
+  const svg = SVGS[d.slug];
+  const overlays = letterData.map(c => {
+    return `<circle cx="${c.x}" cy="${c.y}" r="9" fill="#a3325a" stroke="#ffffff" stroke-width="1.5"/>` +
+           `<text x="${c.x}" y="${c.y+3.5}" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#ffffff">${c.letter}</text>`;
+  }).join("");
+  return svg.replace('</svg>', overlays + '</svg>');
+}
+
+function svgToPngBytes(svgString, scale){
+  scale = scale || 3;
+  const [w, h] = DATA.canvas;
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([svgString], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = w * scale;
+      canvas.height = h * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(pngBlob => {
+        URL.revokeObjectURL(url);
+        pngBlob.arrayBuffer().then(buf => resolve(new Uint8Array(buf)));
+      }, 'image/png');
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+function generateQuizSet(n){
+  const pool = buildCandidatePoolForCurrentMode();
+  const statusEl = document.getElementById('quiz-set-status');
+  const listEl = document.getElementById('quiz-set-list');
+  if(pool.length === 0){
+    statusEl.textContent = 'No eligible questions for this selection — try including another category.';
+    listEl.classList.remove('show');
+    document.getElementById('quiz-set-export').disabled = true;
+    document.getElementById('quiz-set-take').disabled = true;
+    return;
+  }
+  const shuffled = shuffle(pool);
+  const chosen = [];
+  for(let i = 0; i < n; i++) chosen.push(shuffled[i % shuffled.length]);
+  quizSet = chosen.map(questionFromRecipe);
+
+  const repeatNote = shuffled.length < n ? ` (only ${shuffled.length} unique questions available for this filter — some repeats included)` : '';
+  statusEl.textContent = `${n}-question set ready${repeatNote}. Take it in the browser, or export it to Word.`;
+  listEl.classList.add('show');
+  listEl.innerHTML = quizSet.map((q,i) => `<div>${i+1}. ${escHtml(q.drug.name)} — ${escHtml(categoryForQuestion(q))}</div>`).join('');
+  document.getElementById('quiz-set-export').disabled = false;
+  document.getElementById('quiz-set-take').disabled = false;
+}
+
+function setTakingModeUI(active){
+  document.getElementById('quiz-set-count').disabled = active;
+  document.getElementById('quiz-set-generate').disabled = active;
+  document.getElementById('quiz-set-export').disabled = active || quizSet.length === 0;
+  document.getElementById('quiz-set-take').disabled = active || quizSet.length === 0;
+  document.querySelectorAll('#quiz-mode-toggle .mode-btn').forEach(b => b.disabled = active);
+  document.getElementById('quiz-set-progress').style.display = active ? 'flex' : 'none';
+}
+
+function updateQuizSetProgressText(){
+  document.getElementById('quiz-set-progress-text').textContent =
+    `Question ${quizSetIndex + 1} of ${quizSet.length} — ${quizSetResults.length} answered so far`;
+}
+
+function startQuizSetTaking(){
+  if(quizSet.length === 0) return;
+  takingQuizSet = true;
+  quizSetIndex = 0;
+  quizSetResults = [];
+  setTakingModeUI(true);
+  document.getElementById('quiz-summary-card').style.display = 'none';
+  document.querySelector('.quiz-card').style.display = '';
+  currentQuiz = quizSet[0];
+  renderQuiz();
+  updateQuizSetProgressText();
+}
+
+function advanceQuizSetTaking(){
+  quizSetIndex++;
+  if(quizSetIndex < quizSet.length){
+    currentQuiz = quizSet[quizSetIndex];
+    renderQuiz();
+    updateQuizSetProgressText();
+  } else {
+    finishQuizSetTaking();
+  }
+}
+
+function finishQuizSetTaking(){
+  takingQuizSet = false;
+  setTakingModeUI(false);
+  document.querySelector('.quiz-card').style.display = 'none';
+
+  const totalCorrect = quizSetResults.filter(r => r.correct).length;
+  document.getElementById('quiz-summary-score').textContent =
+    `${totalCorrect} / ${quizSetResults.length} correct`;
+
+  const byCategory = {};
+  quizSetResults.forEach(r => {
+    if(!byCategory[r.category]) byCategory[r.category] = {correct:0, total:0};
+    byCategory[r.category].total++;
+    if(r.correct) byCategory[r.category].correct++;
+  });
+  const breakdown = document.getElementById('quiz-summary-breakdown');
+  breakdown.innerHTML = Object.keys(byCategory).sort().map(cat => {
+    const {correct, total} = byCategory[cat];
+    const cls = correct === total ? 'perfect' : correct === 0 ? 'weak' : '';
+    return `<div class="quiz-summary-row"><span>${escHtml(cat)}</span><span class="frac ${cls}">${correct}/${total}</span></div>`;
+  }).join('');
+
+  document.getElementById('quiz-summary-card').style.display = '';
+}
+
+function exitQuizSetTaking(){
+  takingQuizSet = false;
+  setTakingModeUI(false);
+  document.getElementById('quiz-summary-card').style.display = 'none';
+  document.querySelector('.quiz-card').style.display = '';
+  newQuizQuestion();
+}
+
+document.getElementById('quiz-set-generate').addEventListener('click', () => {
+  const input = document.getElementById('quiz-set-count');
+  let n = parseInt(input.value, 10);
+  if(isNaN(n)) n = 10;
+  n = Math.max(5, Math.min(25, n));
+  input.value = n;
+  generateQuizSet(n);
+});
+
+document.getElementById('quiz-set-export').addEventListener('click', async () => {
+  const btn = document.getElementById('quiz-set-export');
+  const statusEl = document.getElementById('quiz-set-status');
+  btn.disabled = true;
+  const imageFiles = [];
+  const questions = [];
+  const answerLines = [];
+  try{
+    for(let i = 0; i < quizSet.length; i++){
+      statusEl.textContent = `Rendering structure ${i+1} of ${quizSet.length}…`;
+      const q = quizSet[i];
+      const svgStr = q.type === 'basicn'
+        ? svgWithBakedLetterDots(q.drug, q.letterData)
+        : q.highlightLabel
+        ? svgWithBakedBox(q.drug, q.highlightLabel)
+        : SVGS[q.drug.slug];
+      const pngBytes = await svgToPngBytes(svgStr);
+      imageFiles.push({name:`word/media/image${i+1}.png`, data:pngBytes});
+      questions.push({stem: stemTextFor(q), options: optionTextsFor(q), imageRelId: i+1});
+      answerLines.push(answerLineFor(q, i+1));
+    }
+    statusEl.textContent = 'Assembling document…';
+    const documentXml = buildDocumentXml('Medicinal Chemistry Practice Quiz', questions, answerLines);
+    const contentTypesXml = buildContentTypesXml(quizSet.length);
+    const rootRelsXml = buildRootRelsXml();
+    const documentRelsXml = buildDocumentRelsXml(quizSet.length);
+    const enc = new TextEncoder();
+    const allFiles = [
+      {name:'[Content_Types].xml', data: enc.encode(contentTypesXml)},
+      {name:'_rels/.rels', data: enc.encode(rootRelsXml)},
+      {name:'word/document.xml', data: enc.encode(documentXml)},
+      {name:'word/_rels/document.xml.rels', data: enc.encode(documentRelsXml)},
+      ...imageFiles,
+    ];
+    const zipBytes = buildZip(allFiles);
+    const blob = new Blob([zipBytes], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'medchem_quiz.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    statusEl.textContent = `Downloaded medchem_quiz.docx (${quizSet.length} questions + answer key).`;
+  } catch(err){
+    statusEl.textContent = 'Something went wrong generating the document — please try again.';
+    console.error(err);
+  }
+  btn.disabled = false;
+});
+document.getElementById('quiz-add-bank').addEventListener('click', ()=>{
+  const {type, drug, correct, options} = currentQuiz;
+  if(type==='identify'){
+    bank.push({type:'quiz', name:drug.name, brand:drug.brand, cls:drug.class, label:correct, formula:drug.formula, mw:drug.mw, smiles:drug.smiles, options});
+  } else if(type==='acidbase'){
+    bank.push({type:'quiz-acidbase', name:drug.name, brand:drug.brand, cls:drug.class, label:currentQuiz.groupLabel, acidBase:correct, pka:currentQuiz.pka, formula:drug.formula, mw:drug.mw, smiles:drug.smiles});
+  } else if(type==='hbond'){
+    const propName = currentQuiz.property==='hbd' ? 'H-bond donors' : 'H-bond acceptors';
+    bank.push({type:'quiz-hbond', name:drug.name, brand:drug.brand, cls:drug.class, property:propName, answer:correct, options, formula:drug.formula, mw:drug.mw, smiles:drug.smiles});
+  } else if(type==='stereo'){
+    bank.push({type:'quiz-stereo', name:drug.name, brand:drug.brand, cls:drug.class, answer:correct, options, formula:drug.formula, mw:drug.mw, smiles:drug.smiles});
+  } else if(type==='ro5'){
+    bank.push({type:'quiz-ro5', name:drug.name, brand:drug.brand, cls:drug.class, answer:correct, options, mw:drug.mw, logp:drug.logp, hbd:drug.hbd, hba:drug.hba, formula:drug.formula, smiles:drug.smiles});
+  } else if(type==='degree'){
+    bank.push({type:'quiz-degree', name:drug.name, brand:drug.brand, cls:drug.class, label:currentQuiz.groupLabel, answer:correct, options, pka:currentQuiz.pka, formula:drug.formula, mw:drug.mw, smiles:drug.smiles});
+  } else if(type==='basicn'){
+    bank.push({type:'quiz-basicn', name:drug.name, brand:drug.brand, cls:drug.class, answer:correct, options, letterData:currentQuiz.letterData, formula:drug.formula, mw:drug.mw, smiles:drug.smiles});
+  } else if(type==='locate'){
+    bank.push({type:'quiz-locate', name:drug.name, brand:drug.brand, cls:drug.class, answer:correct, boxes:currentQuiz.boxes, formula:drug.formula, mw:drug.mw, smiles:drug.smiles});
+  }
+  updateBankCount();
+  document.getElementById('quiz-add-bank').disabled = true;
+  document.getElementById('quiz-add-bank').textContent = "✓ Added";
+  setTimeout(()=>{ document.getElementById('quiz-add-bank').textContent = "Add to bank"; },1200);
+});
+
+// ---------- Bank modal ----------
+function updateBankCount(){
+  document.getElementById('bank-count').textContent = bank.length;
+  const tabCount = document.getElementById('tab-bank-count');
+  tabCount.textContent = bank.length;
+  tabCount.classList.toggle('zero', bank.length === 0);
+}
+function renderBankPanel(){
+  const rows = document.getElementById('bank-rows');
+  const empty = document.getElementById('bank-empty');
+  if(bank.length===0){ rows.innerHTML=""; empty.style.display='block'; }
+  else {
+    empty.style.display='none';
+    rows.innerHTML = bank.map((b,i)=>{
+      let sub;
+      if(b.type==='quiz-acidbase') sub = `${b.label} — ${b.acidBase}`;
+      else if(b.type==='quiz-hbond') sub = `${b.property}: ${b.answer}`;
+      else if(b.type==='quiz-stereo') sub = `stereocenters: ${b.answer}`;
+      else if(b.type==='quiz-ro5') sub = RO5_CRITERIA[b.answer];
+      else if(b.type==='quiz-degree') sub = `${b.label} — ${b.answer}`;
+      else if(b.type==='quiz-basicn') sub = `most basic: N${b.answer}`;
+      else if(b.type==='quiz-locate') sub = `click: ${b.answer}`;
+      else sub = b.label;
+      const tag = b.type==='quiz' ? '· ID' : b.type==='quiz-acidbase' ? '· Acid/Base' : b.type==='quiz-hbond' ? '· H-bond' : b.type==='quiz-stereo' ? '· Stereo' : b.type==='quiz-ro5' ? '· Ro5' : b.type==='quiz-degree' ? '· Degree' : b.type==='quiz-basicn' ? '· Basic N' : b.type==='quiz-locate' ? '· Click' : '';
+      return `<div class="bank-row">
+      <div class="info"><b>${escHtml(b.name)}</b> — ${escHtml(sub)}<br><span>${escHtml(b.brand)} · ${escHtml(b.cls)} ${tag}</span></div>
+      <button class="rm" data-i="${i}">remove</button>
+    </div>`;
+    }).join("");
+    rows.querySelectorAll('.rm').forEach(el=>el.addEventListener('click',()=>{
+      bank.splice(parseInt(el.getAttribute('data-i')),1);
+      updateBankCount(); renderBankPanel(); renderGrid();
+    }));
+  }
+  document.getElementById('export-box').value = buildExportText();
+}
+
+// robust distractor picker: prefers the curated confusables list, but pads
+// from the full label pool if a bookmarked label has fewer than `count` peers
+function distractorsFor(label, count){
+  let pool = confusablesFor(label);
+  if(pool.length < count){
+    const extra = shuffle(ALL_LABELS.filter(l => l !== label && !pool.includes(l)));
+    pool = [...pool, ...extra];
+  }
+  return shuffle(pool).slice(0, count);
+}
+
+// normalizes any of the 7 bank entry shapes into a common {drug, stem, options,
+// correctIdx, answerText, highlightLabel} shape for docx export
+function bankEntryToQuizData(b){
+  const drug = DRUGS.find(d => d.name === b.name);
+  if(b.type === 'browse' || b.type === 'quiz'){
+    let options = b.options;
+    if(!options){
+      const distractors = distractorsFor(b.label, 3);
+      options = shuffle([b.label, ...distractors]);
+    }
+    const stem = `${b.name} is used as ${b.cls.split(" (")[0].toLowerCase()}. Identify the highlighted ${categoryWordFor(b.label)}.`;
+    return {drug, stem, options, correctIdx: options.indexOf(b.label), answerText: b.label, highlightLabel: b.label};
+  }
+  if(b.type === 'quiz-acidbase'){
+    const shuffled = shuffle(['acidic','basic','neutral']);
+    const stem = `${b.name} (${b.brand}) — is the highlighted group acidic, basic, or neutral (non-ionizable)?`;
+    return {drug, stem, options: shuffled.map(abDisplayLabel), correctIdx: shuffled.indexOf(b.acidBase),
+      answerText: `${abDisplayLabel(b.acidBase)} (${b.pka})`, highlightLabel: b.label};
+  }
+  if(b.type === 'quiz-hbond'){
+    const stem = `How many ${b.property} does ${b.name} (${b.brand}) have?`;
+    return {drug, stem, options: b.options, correctIdx: b.options.map(String).indexOf(String(b.answer)),
+      answerText: `${b.answer} ${b.property}`, highlightLabel: null};
+  }
+  if(b.type === 'quiz-stereo'){
+    const stem = `How many stereocenters does ${b.name} (${b.brand}) have?`;
+    return {drug, stem, options: b.options, correctIdx: b.options.map(String).indexOf(String(b.answer)),
+      answerText: `${b.answer} stereocenter${b.answer==='1'?'':'s'}`, highlightLabel: null};
+  }
+  if(b.type === 'quiz-ro5'){
+    const stem = `Does ${b.name} (${b.brand}) violate Lipinski's Rule of Five? If so, which criterion?`;
+    const stats = `MW ${b.mw}, LogP ${b.logp}, HBD ${b.hbd}, HBA ${b.hba}`;
+    return {drug, stem, options: b.options.map(k => RO5_CRITERIA[k]), correctIdx: b.options.indexOf(b.answer),
+      answerText: `${RO5_CRITERIA[b.answer]} (${stats})`, highlightLabel: null};
+  }
+  if(b.type === 'quiz-degree'){
+    const stem = `${b.name} is used as ${b.cls.split(" (")[0].toLowerCase()}. Is the highlighted group primary, secondary, or tertiary?`;
+    return {drug, stem, options: b.options, correctIdx: b.options.indexOf(b.answer),
+      answerText: `${b.answer} (${b.label} — ${b.pka})`, highlightLabel: b.label};
+  }
+  if(b.type === 'quiz-basicn'){
+    const stem = `Which marked nitrogen in ${b.name} (${b.brand}) is most basic?`;
+    const info = b.letterData.find(c => c.letter === b.answer);
+    return {drug, type:'basicn', letterData: b.letterData, stem,
+      options: b.options.map(o => `Nitrogen ${o}`), correctIdx: b.options.indexOf(b.answer),
+      answerText: `Nitrogen ${b.answer} — ${info ? info.label : ''}`, highlightLabel: null};
+  }
+  if(b.type === 'quiz-locate'){
+    const stem = `Circle or label the ${b.answer} in ${b.name} (${b.brand})'s structure below.`;
+    return {drug, type:'locate', stem, options: [], correctIdx: -1, answerText: b.answer, highlightLabel: null};
+  }
+}
+function buildExportText(){
+  return bank.map((b,i)=>{
+    let s = `${i+1}. ${b.name} (${b.brand}) — ${b.cls}\n   Formula: ${b.formula}   MW: ${b.mw}   SMILES: ${b.smiles}`;
+    if(b.type==='quiz-acidbase'){
+      s += `\n   Highlighted group: ${b.label}\n   Question: Is the highlighted group acidic, basic, or neutral?\n   Answer: ${b.acidBase.charAt(0).toUpperCase()+b.acidBase.slice(1)} (${b.pka})`;
+    } else if(b.type==='quiz-hbond'){
+      s += `\n   Question: How many ${b.property} does this molecule have?\n   Answer choices: ${b.options.join(" / ")}\n   Correct answer: ${b.answer}`;
+    } else if(b.type==='quiz-stereo'){
+      s += `\n   Question: How many stereocenters does this molecule have?\n   Answer choices: ${b.options.join(" / ")}\n   Correct answer: ${b.answer}`;
+    } else if(b.type==='quiz-ro5'){
+      s += `\n   Question: Does this molecule violate Lipinski's Rule of Five? If so, which criterion?\n   Stats: MW ${b.mw}, LogP ${b.logp}, HBD ${b.hbd}, HBA ${b.hba}\n   Answer: ${RO5_CRITERIA[b.answer]}`;
+    } else if(b.type==='quiz-degree'){
+      s += `\n   Highlighted group: ${b.label}\n   Question: Is the highlighted group primary, secondary, or tertiary?\n   Answer: ${b.answer} (${b.pka})`;
+    } else if(b.type==='quiz-basicn'){
+      const info = b.letterData.find(c => c.letter === b.answer);
+      s += `\n   Question: Which marked nitrogen (${b.options.join(" / ")}) is most basic?\n   Answer: Nitrogen ${b.answer} — ${info ? info.label : ''}`;
+    } else if(b.type==='quiz-locate'){
+      s += `\n   Question: Click on (or circle) the ${b.answer} in this structure.\n   Answer: ${b.answer}`;
+    } else {
+      s += `\n   Highlighted group: ${b.label}`;
+      if(b.type==='quiz' && b.options){
+        s += `\n   Answer choices: ${b.options.join(" / ")}`;
+      }
+    }
+    return s;
+  }).join("\n\n");
+}
+
+async function exportBankToDocx(){
+  const btn = document.getElementById('download-export');
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Generating…';
+  try{
+    const imageFiles = [];
+    const questions = [];
+    const answerLines = [];
+    const letters = ['A','B','C','D'];
+    for(let i = 0; i < bank.length; i++){
+      btn.textContent = `Rendering ${i+1} of ${bank.length}…`;
+      const b = bank[i];
+      const qd = bankEntryToQuizData(b);
+      const svgStr = qd.type === 'basicn'
+        ? svgWithBakedLetterDots(qd.drug, qd.letterData)
+        : qd.highlightLabel ? svgWithBakedBox(qd.drug, qd.highlightLabel) : SVGS[qd.drug.slug];
+      const pngBytes = await svgToPngBytes(svgStr);
+      imageFiles.push({name:`word/media/image${i+1}.png`, data:pngBytes});
+      questions.push({stem: qd.stem, options: qd.options, imageRelId: i+1});
+      answerLines.push(`${i+1}. ${letters[qd.correctIdx]} — ${qd.answerText}`);
+    }
+    btn.textContent = 'Assembling document…';
+    const documentXml = buildDocumentXml('Medicinal Chemistry Question Bank', questions, answerLines);
+    const contentTypesXml = buildContentTypesXml(bank.length);
+    const rootRelsXml = buildRootRelsXml();
+    const documentRelsXml = buildDocumentRelsXml(bank.length);
+    const enc = new TextEncoder();
+    const allFiles = [
+      {name:'[Content_Types].xml', data: enc.encode(contentTypesXml)},
+      {name:'_rels/.rels', data: enc.encode(rootRelsXml)},
+      {name:'word/document.xml', data: enc.encode(documentXml)},
+      {name:'word/_rels/document.xml.rels', data: enc.encode(documentRelsXml)},
+      ...imageFiles,
+    ];
+    const zipBytes = buildZip(allFiles);
+    const blob = new Blob([zipBytes], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'question_bank.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch(err){
+    console.error(err);
+    alert('Something went wrong generating the document — please try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = origText;
+}
+document.getElementById('bank-btn').addEventListener('click', ()=>{
+  document.querySelector('.tab-btn[data-tab="bank"]').click();
+});
+document.getElementById('clear-bank').addEventListener('click', ()=>{ bank=[]; updateBankCount(); renderBankPanel(); renderGrid(); });
+document.getElementById('copy-export').addEventListener('click', ()=>{
+  const box = document.getElementById('export-box');
+  box.select();
+  navigator.clipboard && navigator.clipboard.writeText(box.value).catch(()=>document.execCommand('copy'));
+});
+document.getElementById('download-export').addEventListener('click', exportBankToDocx);
+
+// ---------- init ----------
+document.getElementById('drug-count').textContent = DRUGS.length;
+updateBankCount();
+renderCatLists();
+renderGrid();
+</script>
+</body>
+</html>

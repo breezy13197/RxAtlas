@@ -1,0 +1,226 @@
+"""
+Post-build validation for the Rx Substructure Atlas pipeline.
+
+Run this AFTER process.py + minify_svg.py and BEFORE copying data.json /
+svgs_min.json into the site's data/ directory. It catches the failure modes
+that are silent at runtime — a new group that never appears in a quiz, a
+renamed drug that orphans saved question banks, a pattern that matches nothing.
+
+Usage:
+    python validate.py
+    python validate.py --site ../rx-atlas-site      # compare against deployed data
+    python validate.py --strict                     # warnings also exit non-zero
+
+Exit codes:  0 = clean (or warnings only)   1 = errors found
+"""
+
+import argparse, csv, json, os, re, sys
+from collections import Counter
+
+# --- pretty output ---------------------------------------------------------
+ERRORS, WARNINGS, NOTES = [], [], []
+def error(msg, detail=""): ERRORS.append((msg, detail))
+def warn(msg, detail=""): WARNINGS.append((msg, detail))
+def note(msg, detail=""): NOTES.append((msg, detail))
+
+def slugify(name):
+    """Must stay identical to slugify() in process.py."""
+    return re.sub(r'[^a-z0-9]+', '_', name.lower()).strip('_')
+
+
+def read_csv(path):
+    if not os.path.exists(path):
+        sys.exit(f"ERROR: {path} not found. Run this from the pipeline directory.")
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def extract_confuse_groups(app_js_path):
+    """Parses CONFUSE_GROUPS out of app.js so the quiz's distractor table can be
+    checked against patterns.csv. Returns None if app.js can't be located."""
+    if not os.path.exists(app_js_path):
+        return None
+    src = open(app_js_path, encoding="utf-8").read()
+    try:
+        block = src[src.index("const CONFUSE_GROUPS"):src.index("function confusablesFor")]
+    except ValueError:
+        return None
+    return [re.findall(r'"([^"]+)"', line) for line in block.split("\n") if '["' in line]
+
+
+def confusables_for(label, groups):
+    for g in groups:
+        if label in g:
+            return [x for x in g if x != label]
+    return []
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--site", default="..", help="path to the site repo (for data/ comparison)")
+    ap.add_argument("--drugs", default="drugs.csv")
+    ap.add_argument("--patterns", default="patterns.csv")
+    ap.add_argument("--data", default="data.json")
+    ap.add_argument("--svgs", default="svgs_min.json")
+    ap.add_argument("--strict", action="store_true", help="treat warnings as failures")
+    args = ap.parse_args()
+
+    drugs_csv = read_csv(args.drugs)
+    patterns_csv = read_csv(args.patterns)
+
+    for p in (args.data, args.svgs):
+        if not os.path.exists(p):
+            sys.exit(f"ERROR: {p} not found — run process.py and minify_svg.py first.")
+    data = json.load(open(args.data))
+    svgs = json.load(open(args.svgs))
+    drugs = data["drugs"]
+
+    # ---- 1. source CSV integrity ------------------------------------------
+    names = [d["generic_name"].strip() for d in drugs_csv if d.get("generic_name", "").strip()]
+    for name, n in Counter(names).items():
+        if n > 1:
+            error(f"duplicate generic_name in drugs.csv: {name!r} appears {n}x")
+
+    slug_owners = {}
+    for name in names:
+        slug_owners.setdefault(slugify(name), []).append(name)
+    for slug, owners in slug_owners.items():
+        if len(owners) > 1:
+            error(f"slug collision: {' and '.join(repr(o) for o in owners)} both slugify to {slug!r}",
+                  "One will silently overwrite the other's structure drawing.")
+
+    labels = [p["label"].strip() for p in patterns_csv if p.get("label", "").strip()]
+    for label, n in Counter(labels).items():
+        if n > 1:
+            error(f"duplicate label in patterns.csv: {label!r} appears {n}x")
+
+    for p in patterns_csv:
+        label = p.get("label", "").strip()
+        if not label:
+            continue
+        cat = p.get("category", "").strip()
+        if cat not in ("Heterocycle", "Functional group"):
+            error(f"{label!r} has category={cat!r}",
+                  "Must be exactly 'Heterocycle' or 'Functional group' — anything else "
+                  "vanishes from the sidebar and the quiz category filter.")
+        if not p.get("pka_note", "").strip():
+            warn(f"{label!r} has a blank pka_note", "Feedback text will show an empty parenthetical.")
+
+    # ---- 2. did every drug survive processing? ----------------------------
+    processed = {d["name"] for d in drugs}
+    for name in names:
+        if name not in processed:
+            error(f"{name!r} is in drugs.csv but not in data.json",
+                  "RDKit could not parse its SMILES — check process.py's stderr output.")
+
+    # ---- 3. data.json <-> svgs_min.json coherence -------------------------
+    data_slugs = {d["slug"] for d in drugs}
+    svg_slugs = set(svgs)
+    if data_slugs - svg_slugs:
+        error(f"{len(data_slugs - svg_slugs)} drug(s) have no SVG: {sorted(data_slugs - svg_slugs)[:5]}",
+              "Structures will render blank. Re-run minify_svg.py.")
+    if svg_slugs - data_slugs:
+        warn(f"{len(svg_slugs - data_slugs)} orphan SVG(s) with no drug record",
+             "Harmless, but they inflate the payload — regenerate both files together.")
+
+    W, H = data["canvas"]
+    for d in drugs:
+        for m in d["matches"]:
+            for box in m["boxes"]:
+                x0, y0, x1, y1 = box
+                if not (0 <= x0 <= x1 <= W and 0 <= y0 <= y1 <= H):
+                    error(f"{d['name']}: highlight box {box} falls outside the {W}x{H} canvas",
+                          "data.json and svgs_min.json are probably from different runs.")
+                    break
+
+    # ---- 4. slug stability vs. what's deployed ----------------------------
+    deployed_path = os.path.join(args.site, "data", "data.json")
+    if os.path.exists(deployed_path) and os.path.abspath(deployed_path) != os.path.abspath(args.data):
+        old = {d["slug"] for d in json.load(open(deployed_path))["drugs"]}
+        lost = old - data_slugs
+        if lost:
+            error(f"{len(lost)} slug(s) present in the deployed build have disappeared: {sorted(lost)[:8]}",
+                  "Saved student question banks referencing these will be dropped on next load. "
+                  "If this is a rename, add an old->new alias in hydrateBankEntry() in app.js.")
+        added = data_slugs - old
+        if added:
+            note(f"{len(added)} new drug(s) since the deployed build")
+    else:
+        note("no deployed data/data.json found to compare against — skipping slug-stability check")
+
+    # ---- 5. quiz reachability (the silent one) ----------------------------
+    match_counts = Counter()
+    for d in drugs:
+        for m in d["matches"]:
+            match_counts[m["label"]] += 1
+
+    for label in labels:
+        if match_counts[label] == 0:
+            warn(f"{label!r} matches zero drugs",
+                 "Its SMARTS may be wrong, or no drug in the set contains it. "
+                 "It will not appear anywhere in the app.")
+
+    groups = extract_confuse_groups(os.path.join(args.site, "js", "app.js"))
+    if groups is None:
+        note("could not read CONFUSE_GROUPS from app.js — skipping quiz-reachability check",
+             "Pass --site to point at the site repo.")
+    else:
+        # The six degree-of-substitution labels are deliberately excluded: they're
+        # quizzed by the 'degree' question type instead of 'identify'.
+        DEGREE_LABELS = {'Primary amine', 'Secondary amine', 'Tertiary amine',
+                         'Primary alcohol', 'Secondary alcohol', 'Tertiary alcohol'}
+        in_groups = {x for g in groups for x in g}
+
+        for label in labels:
+            if label in DEGREE_LABELS or match_counts[label] == 0:
+                continue
+            n = len(confusables_for(label, groups))
+            if n < 3:
+                warn(f"{label!r} ({match_counts[label]} drugs) can never appear in an identify-type quiz",
+                     f"It has {n} confusable(s) in CONFUSE_GROUPS; buildCandidatePool() requires 3. "
+                     f"Add it to a row in CONFUSE_GROUPS in app.js. (It is still reachable in "
+                     f"'Click the Group' mode, which needs no confusables.)")
+
+        for stale in sorted(in_groups - set(labels)):
+            warn(f"CONFUSE_GROUPS lists {stale!r}, which is not in patterns.csv",
+                 "It can be offered as a wrong answer but never be the correct one — "
+                 "an observant student can learn to eliminate it.")
+
+        for label in labels:
+            if label in DEGREE_LABELS and match_counts[label] == 0:
+                warn(f"degree-of-substitution label {label!r} matches no drugs",
+                     "The 'Degree of Substitution' quiz mode depends on these six exact labels.")
+
+    # ---- 6. coverage summary ---------------------------------------------
+    basic_n = sum(1 for d in drugs if d.get("basicNOptions"))
+    stereo = sum(1 for d in drugs if d["stereocenters"])
+    ro5_eligible = sum(1 for d in drugs
+                       if sum([d["mw"] > 500, d["logp"] > 5, d["hbd"] > 5, d["hba"] > 10]) <= 1)
+    payload = (os.path.getsize(args.data) + os.path.getsize(args.svgs)) / 1e6
+
+    print(f"\n{'='*66}")
+    print(f"  {len(drugs)} drugs | {len(labels)} patterns "
+          f"({sum(1 for p in patterns_csv if p.get('category','').strip()=='Heterocycle')} heterocycles, "
+          f"{sum(1 for p in patterns_csv if p.get('category','').strip()=='Functional group')} functional groups)")
+    print(f"  quiz pools: {basic_n} basic-N | {stereo} stereo | {ro5_eligible} Rule-of-5")
+    print(f"  payload: {payload:.2f} MB uncompressed ({payload/max(len(drugs),1)*1000:.1f} KB per drug)")
+    print(f"{'='*66}")
+
+    for bucket, tag in ((ERRORS, "ERROR"), (WARNINGS, "WARN"), (NOTES, "note")):
+        for msg, detail in bucket:
+            print(f"\n[{tag}] {msg}")
+            if detail:
+                print(f"        {detail}")
+
+    print(f"\n{len(ERRORS)} error(s), {len(WARNINGS)} warning(s).")
+    if ERRORS:
+        print("Do not deploy until the errors are resolved.")
+        return 1
+    if WARNINGS and args.strict:
+        return 1
+    print("Safe to copy data.json and svgs_min.json into the site's data/ directory.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
