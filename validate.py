@@ -196,6 +196,19 @@ def main():
                 warn(f"degree-of-substitution label {label!r} matches no drugs",
                      "The 'Degree of Substitution' quiz mode depends on these six exact labels.")
 
+    # ---- 5b. "Most Basic Nitrogen" answers must actually be basic ------------
+    # process.py only offers a question when its correct answer scores as a real
+    # base. This guards against the classifier regressing to the old behavior of
+    # calling a non-basic N (isoxazole, pyridinium, imine...) "the most basic".
+    BASIC_FAMILIES = ("Simple aliphatic amine", "Amine next to a carbonyl",
+                      "Imidazole-type nitrogen", "Pyridine-type nitrogen —")
+    for d in drugs:
+        for o in d.get("basicNOptions") or []:
+            if o["correct"] and not o["label"].startswith(BASIC_FAMILIES):
+                error(f"{d['name']}: 'Most Basic Nitrogen' answer is not a basic group",
+                      f"The marked correct answer is: {o['label']!r}. Students would be told a "
+                      f"non-basic nitrogen is the most basic. Check classify_nitrogen() in process.py.")
+
     # ---- 6. coverage summary ---------------------------------------------
     basic_n = sum(1 for d in drugs if d.get("basicNOptions"))
     stereo = sum(1 for d in drugs if d["stereocenters"])
