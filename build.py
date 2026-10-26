@@ -9,9 +9,9 @@ Usage:
     python3 build.py
 
 Output:
-    Rx_Substructure_Atlas.html
+    index.html  (GitHub Pages serves this file as the site's home page)
 """
-import json
+import json, os
 
 data = json.load(open("data.json"))
 svgs = json.load(open("svgs_min.json"))
@@ -20,10 +20,9 @@ template = open("app_template.html", encoding="utf-8").read()
 html = template.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
 html = html.replace("__SVGS_JSON__", json.dumps(svgs, separators=(',', ':')))
 
-out_path = "Rx_Substructure_Atlas.html"
+out_path = "index.html"
 with open(out_path, "w", encoding="utf-8") as f:
     f.write(html)
 
-import os
 size_mb = os.path.getsize(out_path) / 1e6
 print(f"Wrote {out_path} ({size_mb:.2f} MB, {len(data['drugs'])} drugs)")
