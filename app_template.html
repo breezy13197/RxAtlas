@@ -284,12 +284,14 @@
   .quiz-summary-row .frac.weak{ color:var(--clay); }
   .quiz-mode-label{ font-size:12.5px; color:var(--ink-soft); }
   .quiz-mode-toggle{ display:flex; gap:4px; background:var(--parchment-deep); padding:3px; border-radius:8px; flex-wrap:wrap; }
+  /* same font-weight in every state: a bold-only "active" style made selected
+     buttons wider than deselected ones, so the whole row jumped around */
   .mode-btn{
-    font-family:var(--sans); font-size:12.5px; padding:6px 12px; border-radius:6px; border:none;
+    font-family:var(--sans); font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:6px; border:none;
     background:transparent; color:var(--ink-soft); cursor:pointer;
   }
   .mode-btn:hover{ color:var(--ink); }
-  .mode-btn.active{ background:var(--white); color:var(--ink); font-weight:600; box-shadow:0 1px 2px rgba(19,42,44,.12); }
+  .mode-btn.active{ background:var(--white); color:var(--ink); box-shadow:0 1px 2px rgba(19,42,44,.12); }
   .quiz-card{
     background:var(--white); border:1px solid var(--paper-line); border-radius:12px; padding:26px;
   }
@@ -1460,7 +1462,7 @@ function showTab(tab){
   document.getElementById('page-title').textContent = TAB_TEXT[tab][0];
   document.getElementById('page-sub').innerHTML = TAB_TEXT[tab][1];
   document.body.dataset.tab = tab;
-  if(tab==='quiz' && !currentQuiz && !takingQuizSet) newQuizQuestion();
+  if(tab==='quiz' && !currentQuiz && !quizShowingEmpty && !takingQuizSet) newQuizQuestion();
   if(tab==='learn' && !currentCard) newFlashcard();
   if(tab==='progress') renderProgress();
   if(tab==='bank') renderBankPanel();
@@ -1480,6 +1482,7 @@ let quizSetResults = []; // {category, correct} per answered question, only whil
 let reviewMode = false;     // serving only questions the student previously missed
 let focusLabels = new Set(); // when non-empty, practice only questions about these groups
 let quizGuess = false;      // student marked the current answer as a guess
+let quizShowingEmpty = false; // an "empty" message is on screen on purpose; don't replace it with a random question
 
 // maps a question's type to the human-readable category used in the results breakdown
 function categoryForQuestion(q){
@@ -1524,6 +1527,7 @@ function numericDistractors(correct, count){
 
 function showEmptyQuiz(msg, title){
   currentQuiz = null;
+  quizShowingEmpty = true;
   document.getElementById('quiz-stem').innerHTML = `<b>${title || 'No eligible questions'}</b>`;
   document.getElementById('quiz-explain').classList.remove('show');
   document.getElementById('quiz-guess').disabled = true;
@@ -1648,6 +1652,7 @@ function buildQuestion(recipe){
 }
 
 function newQuizQuestion(){
+  quizShowingEmpty = false;
   if(reviewMode){
     const items = progress.mistakes.map(recipeFromMistake).filter(Boolean);
     if(items.length === 0){
@@ -2386,6 +2391,18 @@ function recipeFromMistake(mk){
   return {kind:mk.kind, d};
 }
 
+// A saved mistake can outlive its question: a later data update may remove the
+// drug, drop a group from it, or make it ineligible for a question type. Those
+// entries can never be served again, so drop them instead of showing a review
+// count that can't be cleared.
+function pruneMistakes(){
+  const keep = progress.mistakes.filter(mk => recipeFromMistake(mk));
+  if(keep.length !== progress.mistakes.length){
+    progress.mistakes = keep;
+    saveProgress();
+  }
+}
+
 function updateReviewCount(){
   const el = document.getElementById('review-count');
   el.textContent = progress.mistakes.length;
@@ -2408,7 +2425,9 @@ function updatePracticeBanner(){
 
 function syncCategoryButtons(){
   document.querySelectorAll('#quiz-mode-toggle .mode-btn').forEach(b=>{
-    b.classList.toggle('active', selectedCategories.has(b.getAttribute('data-cat')));
+    const on = selectedCategories.has(b.getAttribute('data-cat'));
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', on);
   });
 }
 
@@ -2435,6 +2454,7 @@ function startTypePractice(cat){
 }
 function startReview(){
   if(takingQuizSet) exitQuizSetTaking();
+  pruneMistakes();
   reviewMode = true;
   focusLabels = new Set();
   updatePracticeBanner();
@@ -2682,6 +2702,7 @@ function masteryRow(name, st, buttonHtml, min=5){
 }
 
 function renderProgress(){
+  pruneMistakes();
   const box = document.getElementById('progress-content');
   const log = progress.log;
   const overall = summarize(log);
@@ -2885,6 +2906,7 @@ if(prefs.deck){
 }
 nameInput.value = prefs.name || '';
 updateBankCount();
+pruneMistakes();
 updateReviewCount();
 renderCatLists();
 renderGrid();
