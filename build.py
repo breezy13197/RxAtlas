@@ -17,6 +17,9 @@ data = json.load(open("data.json"))
 svgs = json.load(open("svgs_min.json"))
 
 template = open("app_template.html", encoding="utf-8").read()
+template = template.replace("__STEREO_ACTIVITY_HTML__", open("stereo_activity.html", encoding="utf-8").read())
+template = template.replace("__STEREO_ACTIVITY_JS__", open("stereo_activity.js", encoding="utf-8").read())
+template = template.replace("__STEREO_JSON__", json.dumps(json.load(open("stereo.json")), separators=(',', ':')))
 html = template.replace("__DATA_JSON__", json.dumps(data, separators=(',', ':')))
 html = html.replace("__SVGS_JSON__", json.dumps(svgs, separators=(',', ':')))
 

@@ -1,0 +1,39 @@
+<style>
+.stereo-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:18px 0}
+.stereo-pair figure{margin:0;border:1px solid var(--paper-line);border-radius:12px;padding:10px;background:white;color:#222}
+.stereo-pair figcaption{font-weight:700;text-align:center}
+.stereo-pair svg{width:100%;height:auto;display:block}
+.stereo-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:14px 0}
+#stereopairs-panel{max-width:980px;margin:auto}
+#stereo-level{max-width:100%;padding:8px;font:inherit}
+#stereo-centers{min-width:0}
+#stereopairs-panel [hidden]{display:none!important}
+#stereo-feedback{margin:16px 0;line-height:1.6}
+#stereo-options button[aria-pressed="true"]{outline:3px solid var(--ink-soft)}
+@media(max-width:580px){.stereo-pair{grid-template-columns:1fr;gap:10px}.stereo-pair svg{max-height:230px}}
+</style>
+<div id="stereopairs-panel" style="display:none">
+  <div class="quiz-card">
+    <label for="stereo-level">Practice level</label>
+    <select id="stereo-level">
+      <option value="1">1 · Same or different?</option>
+      <option value="2">2 · Identical or enantiomers?</option>
+      <option value="3">3 · Two stereocenters</option>
+    </select>
+    <p class="hint">Compare configuration, not the direction of the drawing. Solid wedges point toward you; dashed wedges point away. Numbers label corresponding stereocenters, not CIP priorities. These practice molecules are not necessarily drugs.</p>
+    <p id="stereo-status" role="status"></p>
+    <h2 id="stereo-stem" tabindex="-1">How are these two structures related?</h2>
+    <div class="stereo-pair" id="stereo-pair"></div>
+    <div class="quiz-options" id="stereo-options" role="group" aria-label="Relationship"></div>
+    <fieldset class="stereo-controls" id="stereo-centers"><legend>Which numbered centers have opposite configurations? Select all that apply; leave unchecked for none.</legend></fieldset>
+    <div class="stereo-controls">
+      <button class="btn" id="stereo-check">Check answer</button>
+      <button class="btn ghost" id="stereo-hint">Hint</button>
+      <button class="btn ghost" id="stereo-reveal" hidden>Show R/S labels</button>
+      <button class="btn" id="stereo-next" hidden>Next pair →</button>
+    </div>
+    <p id="stereo-hint-text" hidden>Compare each numbered center with its counterpart. Assign priorities and orient the lowest-priority group away before comparing R/S. Rotating a drawing preserves configuration.</p>
+    <div id="stereo-feedback" role="status" aria-live="polite"></div>
+    <p class="hint">Classification results are saved in My Progress. Center selections give additional feedback. Hinted answers count as assisted. This activity does not add questions to the quiz review list or question bank.</p>
+  </div>
+</div>

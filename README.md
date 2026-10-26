@@ -21,6 +21,7 @@ The whole site is a single file, `index.html`. It needs no server, no logins, an
 | **Browse** | Every drug in the set. Click a group on the left to see every drug that contains it, highlighted. |
 | **Learn** | Flashcards: name the highlighted group, flip, and rate yourself. Cards you're still learning come back more often. |
 | **Quiz Me** | Practice questions with an explanation after every answer. Students can mark an answer as a guess, review questions they missed, or build a 5–25 question quiz set. |
+| **Same or different?** | Guided stereochemistry practice: compare rotated structures, identify enantiomers or diastereomers, and select which numbered centers have opposite configurations. |
 | **My Progress** | A dashboard showing mastery by question type, the groups they struggle with (with a one-click "Practice these" button), a 14-day activity chart, and a list of questions to review. |
 | **Question Bank** | Students save questions here and download them as a Word document. |
 
@@ -121,3 +122,15 @@ This reads `requirements.txt` and installs RDKit.
 - **H-bond acceptors:** O and S atoms (except the OH of acids), nitrogens not attached to a C=O-type group, aromatic N without an H, and F. This can run 1–2 higher than the simpler "count every N and O" rule. Students see this definition with every question.
 - **Stereocenters:** tetrahedral stereocenters only, including unspecified ones. E/Z double bonds aren't counted.
 - **Most basic nitrogen:** a rule-of-thumb ranking, not a calculated pKa. Each nitrogen is scored by roughly the pKa of its conjugate acid (for example, simple amine ≈ 10, imidazole ≈ 6, pyridine ≈ 5). A question is only created when the winning nitrogen is **genuinely basic** (at least pyridine-like) **and** clearly more basic than every other marked nitrogen. Nitrogens with no available lone pair (amide, quaternary or pyridinium, nitro, nitrile), with a delocalized one (aniline, enamine, imine), or in an electron-poor ring (isoxazole, purine, rings carrying a halogen or C=O) never win. Guanidines and amidines are skipped because their charge is shared across several nitrogens. The wording students see after answering comes from `classify_nitrogen()` in `process.py`. `validate.py` stops the build if a non-basic nitrogen is ever marked as the correct answer.
+
+## Same or different? stereochemistry activity
+
+The activity uses six curated acyclic molecules with one or two tetrahedral stereocenters. The 15 structure pairs are reused across three levels (6, 6, and 9 questions). Symmetry, meso compounds, E/Z geometry, and 3D visualization are outside this first version.
+
+Students select a relationship and which numbered centers have opposite configurations, then check both together. Feedback explains the relationship and each center's R/S configuration; students can reveal R/S annotations on the drawings. Rotations are performed on coordinates without reflecting the structures. Numbers identify corresponding centers, not CIP priorities.
+
+Classification results appear in My Progress and its existing backup/export. Hinted answers are recorded as assisted, using the existing half-credit mastery policy. Center selections receive feedback but do not affect the classification score. These exercises are separate from Quiz Me sets, the automatic review list, and the question bank.
+
+`stereo.py` generates and checks the bank using RDKit; `stereo.json` contains the generated structures and answer data. After editing the curated molecules, run `python stereo.py`. For interface-only edits, change `stereo_activity.html` or `stereo_activity.js`, then run `python build.py`. The build embeds all activity files into `index.html`, keeping the app usable offline without additional runtime dependencies.
+
+Validation: `python -m unittest test_stereo.py`, `node test_stereo_activity.cjs`, and `python validate.py`.

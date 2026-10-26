@@ -104,7 +104,7 @@
   #topbar .sub{ font-size:13px; color:var(--ink-soft); max-width:640px; }
   #topbar .sub b{ color:var(--amber-deep); }
 
-  .tabs{ display:flex; gap:4px; }
+  .tabs{ display:flex; gap:4px; flex-wrap:wrap; }
   .tab-btn{
     font-family:var(--sans); font-size:13px; padding:8px 16px; border-radius:7px 7px 0 0;
     border:1px solid var(--paper-line); border-bottom:none; background:var(--parchment-deep);
@@ -605,6 +605,7 @@
         <button class="tab-btn active" data-tab="browse" role="tab" aria-selected="true">Browse</button>
         <button class="tab-btn" data-tab="learn" role="tab" aria-selected="false">Learn</button>
         <button class="tab-btn" data-tab="quiz" role="tab" aria-selected="false">Quiz Me</button>
+        <button class="tab-btn" data-tab="stereopairs" role="tab" aria-selected="false">Same or different?</button>
         <button class="tab-btn" data-tab="progress" role="tab" aria-selected="false">My Progress</button>
         <button class="tab-btn" data-tab="bank" role="tab" aria-selected="false">Question Bank <span class="tab-count" id="tab-bank-count">0</span></button>
       </div>
@@ -644,6 +645,8 @@
         <div class="flash-card" id="flash-card"></div>
         <div class="kbd-hint">Keyboard: <kbd>Space</kbd> flip card · <kbd>1</kbd> I knew it · <kbd>2</kbd> still learning</div>
       </div>
+
+      __STEREO_ACTIVITY_HTML__
 
       <div id="quiz-panel" style="display:none;">
         <button class="quiz-settings-toggle" id="quiz-settings-toggle" aria-expanded="false" aria-controls="quiz-settings">⚙ Quiz settings: question types &amp; quiz sets ▾</button>
@@ -1435,8 +1438,9 @@ document.getElementById('drug-modal').addEventListener('click', (e)=>{ if(e.targ
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeDrugModal(); });
 
 // ---------- Tabs ----------
-const TABS = ['browse','learn','quiz','progress','bank'];
+const TABS = ['browse','learn','quiz','stereopairs','progress','bank'];
 const TAB_TEXT = {
+  stereopairs: ['Same or different?', 'Compare curated structures with one or two stereocenters. Classify the pair, then explain which centers changed.'],
   browse: ['Find drugs by functional group or ring system',
            'Pick a group on the left, or search by name. Click any drug for details, or add it to your <b>question bank</b>.'],
   learn: ['Flashcards: learn the groups',
@@ -1464,6 +1468,7 @@ function showTab(tab){
   document.body.dataset.tab = tab;
   if(tab==='quiz' && !currentQuiz && !quizShowingEmpty && !takingQuizSet) newQuizQuestion();
   if(tab==='learn' && !currentCard) newFlashcard();
+  if(tab==='stereopairs' && !stereoQueue.length) stereoStart();
   if(tab==='progress') renderProgress();
   if(tab==='bank') renderBankPanel();
   savePrefs();
@@ -1852,7 +1857,7 @@ document.getElementById('quiz-summary-progress').addEventListener('click', ()=>{
 document.getElementById('quiz-set-exit').addEventListener('click', exitQuizSetTaking);
 document.getElementById('quiz-summary-done').addEventListener('click', () => {
   document.getElementById('quiz-summary-card').style.display = 'none';
-  document.querySelector('.quiz-card').style.display = '';
+  document.getElementById('quiz-card').style.display = '';
   setTakingModeUI(false);
   newQuizQuestion();
 });
@@ -2017,7 +2022,7 @@ function startQuizSetTaking(){
   quizSetResults = [];
   setTakingModeUI(true);
   document.getElementById('quiz-summary-card').style.display = 'none';
-  document.querySelector('.quiz-card').style.display = '';
+  document.getElementById('quiz-card').style.display = '';
   currentQuiz = quizSet[0];
   renderQuiz();
   updateQuizSetProgressText();
@@ -2037,7 +2042,7 @@ function advanceQuizSetTaking(){
 function finishQuizSetTaking(){
   takingQuizSet = false;
   setTakingModeUI(false);
-  document.querySelector('.quiz-card').style.display = 'none';
+  document.getElementById('quiz-card').style.display = 'none';
 
   const totalCorrect = quizSetResults.filter(r => r.correct).length;
   document.getElementById('quiz-summary-score').textContent =
@@ -2063,7 +2068,7 @@ function exitQuizSetTaking(){
   takingQuizSet = false;
   setTakingModeUI(false);
   document.getElementById('quiz-summary-card').style.display = 'none';
-  document.querySelector('.quiz-card').style.display = '';
+  document.getElementById('quiz-card').style.display = '';
   newQuizQuestion();
 }
 
@@ -2351,6 +2356,7 @@ const QUIZ_CAT_NAMES = {
   'Heterocycle':'Identify heterocycles', 'Functional group':'Identify functional groups',
   acidbase:'Acid / Base', hbond:'H-Bond Count', stereo:'Stereocenters', ro5:'Rule of 5',
   degree:'Degree of Substitution', basicn:'Most Basic Nitrogen', locate:'Click the Group',
+  stereopairs:'Same or different?',
 };
 function mistakeKey(r){ return [r.kind, r.d.slug, r.m ? r.m.label : (r.property || '')].join('|'); }
 
@@ -2443,6 +2449,7 @@ function startFocusPractice(labels){
   showTab('quiz');
 }
 function startTypePractice(cat){
+  if(cat === 'stereopairs'){showTab('stereopairs'); return;}
   if(takingQuizSet) exitQuizSetTaking();
   reviewMode = false;
   focusLabels = new Set();
@@ -2889,6 +2896,8 @@ document.addEventListener('keydown', (e)=>{
     else if(k === '2' && currentCard.flipped) rateFlashcard(false);
   }
 });
+
+__STEREO_ACTIVITY_JS__
 
 // ---------- init ----------
 document.getElementById('drug-count').textContent = DRUGS.length;
